@@ -12,13 +12,27 @@ import requests
 
 from extras import EXTRA_PROMPTS, extra_demos
 
-# 只允许这些已实测能返回正文、且官方标为免费档的模型。其它编码一律不发出。
+# 只允许不按量扣费的模型。智谱密钥只能调智谱；硅基流动密钥调通义等开源小模型。
 FREE_MODELS = {
-    "glm-4-flash": {"api": "glm-4-flash", "thinking": False},
-    "glm-4-flash-250414": {"api": "glm-4-flash-250414", "thinking": False},
-    "glm-4.7-flash": {"api": "glm-4.7-flash", "thinking": True},
-    "glm-4.5-flash": {"api": "glm-4.5-flash", "thinking": True},
-    "glm-z1-flash": {"api": "glm-z1-flash", "thinking": True},
+    "glm-4-flash": {"api": "glm-4-flash", "thinking": False, "provider": "zhipu"},
+    "glm-4-flash-250414": {"api": "glm-4-flash-250414", "thinking": False, "provider": "zhipu"},
+    "glm-4.7-flash": {"api": "glm-4.7-flash", "thinking": True, "provider": "zhipu"},
+    "glm-4.5-flash": {"api": "glm-4.5-flash", "thinking": True, "provider": "zhipu"},
+    "glm-z1-flash": {"api": "glm-z1-flash", "thinking": True, "provider": "zhipu"},
+    "qwen25-7b": {"api": "Qwen/Qwen2.5-7B-Instruct", "thinking": False, "provider": "silicon"},
+    "qwen35-4b": {"api": "Qwen/Qwen3.5-4B", "thinking": True, "provider": "silicon"},
+    "glm4-9b": {"api": "THUDM/GLM-4-9B-0414", "thinking": False, "provider": "silicon"},
+}
+
+PROVIDERS = {
+    "zhipu": {
+        "url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+        "env": "ZHIPU_API_KEY",
+    },
+    "silicon": {
+        "url": "https://api.siliconflow.cn/v1/chat/completions",
+        "env": "SILICONFLOW_API_KEY",
+    },
 }
 
 MODELS = [
@@ -56,6 +70,27 @@ MODELS = [
         "tag": "深度推理",
         "vendor": "智谱 AI",
         "desc": "先推理再回答，适合审稿和答辩",
+    },
+    {
+        "id": "qwen25-7b",
+        "name": "通义千问 2.5-7B",
+        "tag": "对话",
+        "vendor": "阿里云",
+        "desc": "通义小模型，适合问答和改写",
+    },
+    {
+        "id": "qwen35-4b",
+        "name": "通义千问 3.5-4B",
+        "tag": "写作",
+        "vendor": "阿里云",
+        "desc": "通义轻量模型，适合段落写作",
+    },
+    {
+        "id": "glm4-9b",
+        "name": "智谱 GLM-4-9B",
+        "tag": "开源",
+        "vendor": "智谱 AI",
+        "desc": "开源 9B，和清言 Flash 不是同一个接口",
     },
 ]
 
@@ -172,6 +207,7 @@ def parse_path(path, original_name=None):
 def provider_status():
     return {
         "zhipu": bool(os.environ.get("ZHIPU_API_KEY")),
+        "silicon": bool(os.environ.get("SILICONFLOW_API_KEY")),
         "deepseek": bool(os.environ.get("DEEPSEEK_API_KEY")),
         "qwen": bool(os.environ.get("DASHSCOPE_API_KEY")),
         "kimi": bool(os.environ.get("MOONSHOT_API_KEY")),
@@ -258,13 +294,18 @@ def call_llm(model_id, system, user, history=None):
     messages.append({"role": "user", "content": user})
 
     spec = FREE_MODELS.get(model_id) or FREE_MODELS["glm-4-flash"]
-    key = os.environ.get("ZHIPU_API_KEY")
+    provider = PROVIDERS[spec["provider"]]
+    key = os.environ.get(provider["env"])
     if not key:
         return None, True
-    extra = {"thinking": {"type": "disabled"}} if spec["thinking"] else None
+    extra = None
+    if spec["thinking"] and spec["provider"] == "zhipu":
+        extra = {"thinking": {"type": "disabled"}}
+    elif spec["thinking"] and spec["provider"] == "silicon":
+        extra = {"enable_thinking": False}
     try:
         text = _openai_chat(
-            "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+            provider["url"],
             key,
             spec["api"],
             messages,
