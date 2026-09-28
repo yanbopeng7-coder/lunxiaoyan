@@ -40,7 +40,7 @@ d:\py\Anaconda3\python.exe build_pages.py
 
 默认：**智谱清言 4-Flash**。下拉里每一项都请求对应模型，互不混用。
 
-五个智谱清言共用智谱密钥。通义千问 2.5-7B 和 3.5-4B 走硅基流动。通义千问 3.8-27B 和 GPT-OSS 120B 走 Groq，本地读取 `.env` 里的 `GROQ_API_KEY`。这把密钥不写入公开网页。
+通义千问 3.8-27B 和 GPT-OSS 120B 走 Groq。网页版已带上智谱和 Groq 的调用密钥，评委打开链接即可直接请求这两个平台。硅基流动的两个通义小模型和魔搭仍要各自账号可用后才能调用。
 
 网页版里智谱和硅基流动的密钥只存在这台浏览器里。本地 `启动论小研.bat` 读取 `.env` 里的 `ZHIPU_API_KEY`、`SILICONFLOW_API_KEY` 和 `GROQ_API_KEY`。
 

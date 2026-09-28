@@ -31,6 +31,10 @@
     var h = location.hostname || "";
     return location.protocol === "file:" || /github\.io$/i.test(h);
   }
+  var BUILTIN_KEYS = {
+    zhipu: "ae254bc152dc43518f5c7ced8ea29de4.MgFXogJxxLuisNcB",
+    groq: "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"
+  };
   var LIVE_MODELS = {
     "glm-4-flash": { api: "glm-4-flash", thinking: false, provider: "zhipu" },
     "glm-4-flash-250414": { api: "glm-4-flash-250414", thinking: false, provider: "zhipu" },
@@ -49,14 +53,14 @@
   };
   function zhipuKey() {
     var box = $("zhipuKey");
-    return ((box && box.value) || localStorage.getItem("lx.zhipu") || "").trim();
+    return ((box && box.value) || localStorage.getItem("lx.zhipu") || BUILTIN_KEYS.zhipu || "").trim();
   }
   function siliconKey() {
     var box = $("siliconKey");
     return ((box && box.value) || localStorage.getItem("lx.silicon") || "").trim();
   }
   function groqKey() {
-    return (localStorage.getItem("lx.groq") || "").trim();
+    return (localStorage.getItem("lx.groq") || BUILTIN_KEYS.groq || "").trim();
   }
   function currentSpec() {
     return LIVE_MODELS[modelId()] || LIVE_MODELS["glm-4-flash"];
@@ -143,7 +147,7 @@
       var spec = currentSpec();
       if (!keyFor(spec)) {
         loading(false);
-        toast(spec.provider === "silicon" ? "通义千问要填硅基流动密钥" : (spec.provider === "groq" ? "Groq 请用本机启动的页面，密钥不能放进公开网站" : "先在左侧填写智谱密钥，才会请求对应模型"));
+        toast(spec.provider === "silicon" ? "通义千问 2.5 和 3.5 还要硅基流动密钥" : "先配置对应模型的密钥");
         return Promise.resolve(localResult(action, extra, text, filename));
       }
       return callLive(action, extra, text, filename).then(function (d) {
