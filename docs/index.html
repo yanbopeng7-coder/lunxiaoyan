@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=14" />
+  <link rel="stylesheet" href="static/css/style.css?v=15" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -36,25 +36,14 @@
       <div class="h">系统设置</div>
       <label class="mini">选择大模型</label>
       <select id="modelSelect">
-        <optgroup label="智谱清言">
-          <option value="glm-4-flash" selected>智谱清言 4-Flash（最快，推荐）</option>
-          <option value="glm-4-flash-250414">智谱清言 4-Flash-250414（长文本）</option>
-          <option value="glm-4.7-flash">智谱清言 4.7-Flash（写作）</option>
-          <option value="glm-4.5-flash">智谱清言 4.5-Flash（均衡）</option>
-          <option value="glm-z1-flash">智谱清言 Z1-Flash（深度推理）</option>
-        </optgroup>
-        <optgroup label="通义千问">
-          <option value="qwen25-7b">通义千问 2.5-7B（对话）</option>
-          <option value="qwen35-4b">通义千问 3.5-4B（写作）</option>
-        </optgroup>
-        <optgroup label="智谱开源">
-          <option value="glm4-9b">智谱 GLM-4-9B（开源）</option>
-        </optgroup>
+        <option value="glm-4-flash" selected>智谱清言 4-Flash（最快，推荐）</option>
+        <option value="glm-4-flash-250414">智谱清言 4-Flash-250414（长文本）</option>
+        <option value="glm-4.7-flash">智谱清言 4.7-Flash（写作）</option>
+        <option value="glm-4.5-flash">智谱清言 4.5-Flash（均衡）</option>
+        <option value="glm-z1-flash">智谱清言 Z1-Flash（深度推理）</option>
       </select>
       <label class="mini">智谱密钥</label>
       <input type="password" id="zhipuKey" placeholder="只保存在这台浏览器，不会上传" autocomplete="off" />
-      <label class="mini">硅基流动密钥</label>
-      <input type="password" id="siliconKey" placeholder="调通义千问和 GLM-4-9B，只存在这台浏览器" autocomplete="off" />
       <div class="okbox" id="modelOk">已切换到：智谱清言 4-Flash（最快，推荐）</div>
       <label class="check"><input type="checkbox" id="darkBox" /> 暗黑模式</label>
 
@@ -411,10 +400,10 @@
   </div>
   <div class="toast" id="toast"></div>
   <div class="overlay" id="overlay"><div class="box"><div class="spin"></div><div id="overlayText">生成中…</div></div></div>
-  <script src="static/vendor/fflate.min.js?v=14"></script>
-  <script src="static/vendor/pdf.min.js?v=14"></script>
-  <script src="static/js/readfile.js?v=14"></script>
-  <script src="static/js/pages-demo.js?v=14"></script>
-  <script src="static/js/app.js?v=14"></script>
+  <script src="static/vendor/fflate.min.js?v=15"></script>
+  <script src="static/vendor/pdf.min.js?v=15"></script>
+  <script src="static/js/readfile.js?v=15"></script>
+  <script src="static/js/pages-demo.js?v=15"></script>
+  <script src="static/js/app.js?v=15"></script>
 </body>
 </html>

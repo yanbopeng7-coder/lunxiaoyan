@@ -36,28 +36,17 @@
     "glm-4-flash-250414": { api: "glm-4-flash-250414", thinking: false, provider: "zhipu" },
     "glm-4.7-flash": { api: "glm-4.7-flash", thinking: true, provider: "zhipu" },
     "glm-4.5-flash": { api: "glm-4.5-flash", thinking: true, provider: "zhipu" },
-    "glm-z1-flash": { api: "glm-z1-flash", thinking: true, provider: "zhipu" },
-    "qwen25-7b": { api: "Qwen/Qwen2.5-7B-Instruct", thinking: false, provider: "silicon" },
-    "qwen35-4b": { api: "Qwen/Qwen3.5-4B", thinking: true, provider: "silicon" },
-    "glm4-9b": { api: "THUDM/GLM-4-9B-0414", thinking: false, provider: "silicon" }
+    "glm-z1-flash": { api: "glm-z1-flash", thinking: true, provider: "zhipu" }
   };
   var LIVE_URLS = {
-    zhipu: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
-    silicon: "https://api.siliconflow.cn/v1/chat/completions"
+    zhipu: "https://open.bigmodel.cn/api/paas/v4/chat/completions"
   };
   function zhipuKey() {
     var box = $("zhipuKey");
     return ((box && box.value) || localStorage.getItem("lx.zhipu") || "").trim();
   }
-  function siliconKey() {
-    var box = $("siliconKey");
-    return ((box && box.value) || localStorage.getItem("lx.silicon") || "").trim();
-  }
   function currentSpec() {
     return LIVE_MODELS[modelId()] || LIVE_MODELS["glm-4-flash"];
-  }
-  function keyFor(spec) {
-    return spec.provider === "silicon" ? siliconKey() : zhipuKey();
   }
   function stripThink(text) {
     return String(text || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim();
@@ -73,12 +62,11 @@
         { role: "user", content: "功能：" + action + "\n文件：" + (filename || "") + "\n附加：" + JSON.stringify(extra || {}) + "\n正文：\n" + (text || "") }
       ]
     };
-    if (spec.thinking && spec.provider === "zhipu") body.thinking = { type: "disabled" };
-    if (spec.thinking && spec.provider === "silicon") body.enable_thinking = false;
-    return fetch(LIVE_URLS[spec.provider], {
+    if (spec.thinking) body.thinking = { type: "disabled" };
+    return fetch(LIVE_URLS.zhipu, {
       method: "POST",
       headers: {
-        "Authorization": "Bearer " + keyFor(spec),
+        "Authorization": "Bearer " + zhipuKey(),
         "Content-Type": "application/json"
       },
       body: JSON.stringify(body)
@@ -105,10 +93,9 @@
   function api(action, extra, text, filename) {
     loading(true);
     if (isStaticHost()) {
-      var spec = currentSpec();
-      if (!keyFor(spec)) {
+      if (!zhipuKey()) {
         loading(false);
-        toast(spec.provider === "silicon" ? "通义千问和 GLM-4-9B 要另填硅基流动密钥" : "智谱清言要填写智谱密钥");
+        toast("先在左侧填写智谱密钥，才会请求对应模型");
         return Promise.resolve(localResult(action, extra, text, filename));
       }
       return callLive(action, extra, text, filename).then(function (d) {
@@ -376,7 +363,6 @@
     });
   }
   bindKey("zhipuKey", "lx.zhipu", "智谱密钥已保存在这台浏览器", "已清除智谱密钥");
-  bindKey("siliconKey", "lx.silicon", "硅基流动密钥已保存在这台浏览器", "已清除硅基流动密钥");
   var sel = $("modelSelect");
   if (sel) {
     sel.addEventListener("change", function () {
