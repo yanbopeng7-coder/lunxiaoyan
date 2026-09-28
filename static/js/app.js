@@ -398,6 +398,49 @@
   }
 
   bindDrops();
+  var chatFile = $("chatFile");
+  if (chatFile) {
+    chatFile.addEventListener("change", function () {
+      var file = chatFile.files && chatFile.files[0];
+      chatFile.value = "";
+      if (!file) return;
+      loading(true, "解析文档…");
+      var finish = function (name, text) {
+        loading(false);
+        files.chat = { name: name, text: text };
+        var lab = $("chatFileLabel");
+        if (lab) {
+          lab.style.display = "block";
+          lab.textContent = name;
+        }
+        toast("已带上：" + name);
+      };
+      if (isStaticHost()) {
+        if (!window.LX_READ_FILE) {
+          loading(false);
+          toast("文档解析组件未加载");
+          return;
+        }
+        window.LX_READ_FILE(file).then(function (t) {
+          if (!String(t || "").trim()) throw new Error("文档里没有可提取的文字");
+          finish(file.name, t);
+        }).catch(function (e) {
+          loading(false);
+          toast(e.message || "解析失败");
+        });
+        return;
+      }
+      var fd = new FormData();
+      fd.append("file", file);
+      fetch("/api/parse", { method: "POST", body: fd }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.ok) throw new Error(d.error || "解析失败");
+        finish(d.filename, d.text);
+      }).catch(function (e) {
+        loading(false);
+        toast(e.message || "解析失败");
+      });
+    });
+  }
   if (typeof setScene === "function") setScene("writing");
   function bindKey(id, storageKey, filled, cleared) {
     var box = $(id);

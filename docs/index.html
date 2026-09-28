@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=19" />
+  <link rel="stylesheet" href="static/css/style.css?v=20" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -48,11 +48,6 @@
           <option value="qwen35-4b">通义千问 3.5-4B（写作）</option>
         </optgroup>
       </select>
-      <label class="mini">智谱密钥</label>
-      <input type="password" id="zhipuKey" placeholder="只保存在这台浏览器，不会上传" autocomplete="off" />
-      <label class="mini">硅基流动密钥</label>
-      <input type="password" id="siliconKey" placeholder="只给两个通义千问用，只存在这台浏览器" autocomplete="off" />
-      <div class="okbox" id="modelOk">已切换到：智谱清言 4-Flash（最快，推荐）</div>
       <label class="check"><input type="checkbox" id="darkBox" /> 暗黑模式</label>
 
       <div class="h">基础功能</div>
@@ -159,13 +154,15 @@
         <div class="card">
           <b>对话记录</b>
           <div class="chat-log" id="chatLog"><p style="color:var(--muted)">选择场景后，点击快捷问题或在下方提问。</p></div>
-          <div class="drop" data-key="chat">拖拽 / 点击上传论文，之后的提问都会带上这篇文稿<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
-          <p class="filelab" id="chatFileLabel">尚未选择文件</p>
-          <div style="display:flex;gap:8px;margin-top:8px">
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
             <input type="text" id="chatInput" placeholder="自由提问，例如：帮我评估这篇论文的摘要" />
+            <label class="btn ghost" style="margin:0;cursor:pointer;white-space:nowrap">上传论文
+              <input id="chatFile" type="file" accept=".docx,.pdf,.txt,.md" style="display:none" />
+            </label>
             <button class="btn" type="button" onclick="sendChat()">发送</button>
             <button class="btn ghost" type="button" onclick="exportChat()">导出</button>
           </div>
+          <p class="filelab" id="chatFileLabel" style="display:none"></p>
         </div>
       </section>
 
@@ -422,10 +419,10 @@
   </div>
   <div class="toast" id="toast"></div>
   <div class="overlay" id="overlay"><div class="box"><div class="spin"></div><div id="overlayText">生成中…</div></div></div>
-  <script src="static/vendor/fflate.min.js?v=19"></script>
-  <script src="static/vendor/pdf.min.js?v=19"></script>
-  <script src="static/js/readfile.js?v=19"></script>
-  <script src="static/js/pages-demo.js?v=19"></script>
-  <script src="static/js/app.js?v=19"></script>
+  <script src="static/vendor/fflate.min.js?v=20"></script>
+  <script src="static/vendor/pdf.min.js?v=20"></script>
+  <script src="static/js/readfile.js?v=20"></script>
+  <script src="static/js/pages-demo.js?v=20"></script>
+  <script src="static/js/app.js?v=20"></script>
 </body>
 </html>
