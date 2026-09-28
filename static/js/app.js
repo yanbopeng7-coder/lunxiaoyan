@@ -312,17 +312,18 @@
             toast("已解析：" + name);
           };
           if (isStaticHost() || !file.name) {
-            var reader = new FileReader();
-            reader.onload = function () {
-              var t = String(reader.result || "");
-              if (!t.trim() || /[^\x09\x0A\x0D\x20-\x7E\u4E00-\u9FFF]/.test(t.slice(0, 80)) && !/\.txt|\.md|\.json/i.test(file.name)) {
-                toast("网页版请上传 txt/md，或点「使用演示用例」");
-                loading(false);
-                return;
-              }
+            if (!window.LX_READ_FILE) {
+              loading(false);
+              toast("文档解析组件未加载");
+              return;
+            }
+            window.LX_READ_FILE(file).then(function (t) {
+              if (!String(t || "").trim()) throw new Error("文档里没有可提取的文字");
               finish(file.name, t);
-            };
-            reader.readAsText(file);
+            }).catch(function (e) {
+              loading(false);
+              toast(e.message || "解析失败");
+            });
             return;
           }
           fetch("/api/parse", { method: "POST", body: fd }).then(function (r) { return r.json(); }).then(function (d) {
