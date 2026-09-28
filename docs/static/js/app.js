@@ -31,6 +31,53 @@
     var h = location.hostname || "";
     return location.protocol === "file:" || /github\.io$/i.test(h);
   }
+  var LIVE_MODELS = {
+    "glm-4-flash": { api: "glm-4-flash", thinking: false },
+    "glm-4-flash-250414": { api: "glm-4-flash-250414", thinking: false },
+    "glm-4.7-flash": { api: "glm-4.7-flash", thinking: true },
+    "glm-4.5-flash": { api: "glm-4.5-flash", thinking: true },
+    "glm-z1-flash": { api: "glm-z1-flash", thinking: true }
+  };
+  function zhipuKey() {
+    var box = $("zhipuKey");
+    return ((box && box.value) || localStorage.getItem("lx.zhipu") || "").trim();
+  }
+  function stripThink(text) {
+    return String(text || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+  }
+  function callZhipu(action, extra, text, filename) {
+    var spec = LIVE_MODELS[modelId()] || LIVE_MODELS["glm-4-flash"];
+    var body = {
+      model: spec.api,
+      temperature: 0.4,
+      max_tokens: 2048,
+      messages: [
+        { role: "system", content: "你是论小研，面向本科生与研究生的科研论文写作助手。用中文给出可执行的结果，紧扣用户原文，不要空泛套话。" },
+        { role: "user", content: "功能：" + action + "\n文件：" + (filename || "") + "\n附加：" + JSON.stringify(extra || {}) + "\n正文：\n" + (text || "") }
+      ]
+    };
+    if (spec.thinking) body.thinking = { type: "disabled" };
+    return fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + zhipuKey(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); }).then(function (pack) {
+      if (!pack.ok) {
+        var err = (pack.data && pack.data.error && pack.data.error.message) || "模型请求失败";
+        throw new Error(err);
+      }
+      var msg = pack.data.choices[0].message || {};
+      var content = stripThink(msg.content || "");
+      var name = ($("modelSelect") && $("modelSelect").options[$("modelSelect").selectedIndex].text) || spec.api;
+      if (action === "chat") {
+        return { ok: true, demo: false, mode: "online", model: name, reply: content };
+      }
+      return { ok: true, demo: false, mode: "online", model: name, llm_text: content, sections: [{ title: "模型输出", pre: content }] };
+    });
+  }
   function localResult(action, extra, text, filename) {
     if (typeof window.LX_LOCAL_RUN === "function") {
       return window.LX_LOCAL_RUN(action, extra, text, filename);
@@ -40,9 +87,18 @@
   function api(action, extra, text, filename) {
     loading(true);
     if (isStaticHost()) {
-      return Promise.resolve(localResult(action, extra, text, filename)).then(function (d) {
+      if (!zhipuKey()) {
+        loading(false);
+        toast("先在左侧填写智谱密钥，才会请求对应模型");
+        return Promise.resolve(localResult(action, extra, text, filename));
+      }
+      return callZhipu(action, extra, text, filename).then(function (d) {
         loading(false);
         return d;
+      }).catch(function (e) {
+        loading(false);
+        toast(e.message || "模型请求失败");
+        throw e;
       });
     }
     return fetch("/api/run", {
@@ -290,6 +346,14 @@
 
   bindDrops();
   if (typeof setScene === "function") setScene("writing");
+  var keyBox = $("zhipuKey");
+  if (keyBox) {
+    keyBox.value = localStorage.getItem("lx.zhipu") || "";
+    keyBox.addEventListener("change", function () {
+      localStorage.setItem("lx.zhipu", keyBox.value.trim());
+      toast(keyBox.value.trim() ? "密钥已保存在这台浏览器" : "已清除密钥");
+    });
+  }
   var sel = $("modelSelect");
   if (sel) {
     sel.addEventListener("change", function () {

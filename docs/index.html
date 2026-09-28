@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=10" />
+  <link rel="stylesheet" href="static/css/style.css?v=11" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -37,16 +37,13 @@
       <label class="mini">选择大模型</label>
       <select id="modelSelect">
         <option value="glm-4-flash" selected>智谱清言 4-Flash（最快，推荐）</option>
-        <option value="glm-4">智谱清言 GLM-4</option>
-        <option value="deepseek-v3">DeepSeek-V3</option>
-        <option value="deepseek-r1">DeepSeek-R1（深度推理）</option>
-        <option value="qwen-turbo">通义千问 Turbo</option>
-        <option value="qwen-plus">通义千问 Plus</option>
-        <option value="qwen-max">通义千问 Max</option>
-        <option value="kimi-k2">Kimi K2（长文本）</option>
-        <option value="spark-4">讯飞星火 4.0</option>
-        <option value="ernie-4">文心一言 4.0</option>
+        <option value="glm-4-flash-250414">智谱清言 4-Flash-250414（长文本）</option>
+        <option value="glm-4.7-flash">智谱清言 4.7-Flash（写作）</option>
+        <option value="glm-4.5-flash">智谱清言 4.5-Flash（均衡）</option>
+        <option value="glm-z1-flash">智谱清言 Z1-Flash（深度推理）</option>
       </select>
+      <label class="mini">网页版密钥</label>
+      <input type="password" id="zhipuKey" placeholder="只保存在这台浏览器，不会上传" autocomplete="off" />
       <div class="okbox" id="modelOk">已切换到：智谱清言 4-Flash（最快，推荐）</div>
       <label class="check"><input type="checkbox" id="darkBox" /> 暗黑模式</label>
 
@@ -403,7 +400,7 @@
   </div>
   <div class="toast" id="toast"></div>
   <div class="overlay" id="overlay"><div class="box"><div class="spin"></div><div id="overlayText">生成中…</div></div></div>
-  <script src="static/js/pages-demo.js?v=10"></script>
-  <script src="static/js/app.js?v=10"></script>
+  <script src="static/js/pages-demo.js?v=11"></script>
+  <script src="static/js/app.js?v=11"></script>
 </body>
 </html>

@@ -36,16 +36,17 @@ d:\py\Anaconda3\python.exe build_pages.py
 
 网页版可直接点功能、载入演示用例；docx/pdf 解析仍需本地 `启动论小研.bat`。`.env` 不会上传。
 
-## 可选模型（不含豆包）
+## 可选模型
 
-默认：**智谱清言 4-Flash（最快，推荐）**
+默认：**智谱清言 4-Flash**。下拉框里每一项都会请求对应的智谱模型编码，互不混用：
 
-- 智谱清言 GLM-4-Flash / GLM-4
-- DeepSeek-V3 / DeepSeek-R1
-- 通义千问 Turbo / Plus / Max
-- Kimi K2（长文本）
-- 讯飞星火 4.0
-- 文心一言 4.0
+- 智谱清言 4-Flash
+- 智谱清言 4-Flash-250414
+- 智谱清言 4.7-Flash
+- 智谱清言 4.5-Flash
+- 智谱清言 Z1-Flash
+
+网页版在左侧「网页版密钥」填写一次即可，密钥只存在这台浏览器里。本地 `启动论小研.bat` 读取 `.env` 里的 `ZHIPU_API_KEY`。
 
 将 `.env.example` 复制为 `.env` 后填写对应密钥：
 

@@ -12,8 +12,14 @@ import requests
 
 from extras import EXTRA_PROMPTS, extra_demos
 
-# 界面可切换多家模型名称；实际请求一律走智谱 Flash，避免误调付费接口。
-FLASH_API_NAME = "glm-4-flash"
+# 只允许这些已实测能返回正文、且官方标为免费档的模型。其它编码一律不发出。
+FREE_MODELS = {
+    "glm-4-flash": {"api": "glm-4-flash", "thinking": False},
+    "glm-4-flash-250414": {"api": "glm-4-flash-250414", "thinking": False},
+    "glm-4.7-flash": {"api": "glm-4.7-flash", "thinking": True},
+    "glm-4.5-flash": {"api": "glm-4.5-flash", "thinking": True},
+    "glm-z1-flash": {"api": "glm-z1-flash", "thinking": True},
+}
 
 MODELS = [
     {
@@ -21,76 +27,37 @@ MODELS = [
         "name": "智谱清言 4-Flash",
         "tag": "最快，推荐",
         "vendor": "智谱 AI",
-        "desc": "低延迟，适合评估、润色、陪练等频繁调用",
+        "desc": "短回复快，适合对话和改写",
     },
     {
-        "id": "glm-4",
-        "name": "智谱清言 GLM-4",
+        "id": "glm-4-flash-250414",
+        "name": "智谱清言 4-Flash-250414",
+        "tag": "长文本",
+        "vendor": "智谱 AI",
+        "desc": "上下文更长，适合整章对照",
+    },
+    {
+        "id": "glm-4.7-flash",
+        "name": "智谱清言 4.7-Flash",
+        "tag": "写作",
+        "vendor": "智谱 AI",
+        "desc": "中文写作和结构更稳",
+    },
+    {
+        "id": "glm-4.5-flash",
+        "name": "智谱清言 4.5-Flash",
         "tag": "均衡",
         "vendor": "智谱 AI",
-        "desc": "理解与生成更稳，适合长文评估与审稿",
+        "desc": "评估、大纲和文献整理",
     },
     {
-        "id": "deepseek-v3",
-        "name": "DeepSeek-V3",
-        "tag": "通用强",
-        "vendor": "深度求索",
-        "desc": "中文写作与逻辑梳理能力突出",
-    },
-    {
-        "id": "deepseek-r1",
-        "name": "DeepSeek-R1",
+        "id": "glm-z1-flash",
+        "name": "智谱清言 Z1-Flash",
         "tag": "深度推理",
-        "vendor": "深度求索",
-        "desc": "适合研究问题拆解、审稿与路径规划",
-    },
-    {
-        "id": "qwen-turbo",
-        "name": "通义千问 Turbo",
-        "tag": "高速",
-        "vendor": "阿里云",
-        "desc": "响应快，适合对话陪练与摘要草稿",
-    },
-    {
-        "id": "qwen-plus",
-        "name": "通义千问 Plus",
-        "tag": "均衡",
-        "vendor": "阿里云",
-        "desc": "文档理解较好，适合大纲与文献整理",
-    },
-    {
-        "id": "qwen-max",
-        "name": "通义千问 Max",
-        "tag": "旗舰",
-        "vendor": "阿里云",
-        "desc": "复杂长文、投稿规范对照更稳",
-    },
-    {
-        "id": "kimi-k2",
-        "name": "Kimi K2",
-        "tag": "长文本",
-        "vendor": "月之暗面",
-        "desc": "超长论文与投稿指南对照",
-    },
-    {
-        "id": "spark-4",
-        "name": "讯飞星火 4.0",
-        "tag": "教研",
-        "vendor": "科大讯飞",
-        "desc": "教育科研场景表达较规范",
-    },
-    {
-        "id": "ernie-4",
-        "name": "文心一言 4.0",
-        "tag": "中文优化",
-        "vendor": "百度",
-        "desc": "中文学术表达与国标参考文献",
+        "vendor": "智谱 AI",
+        "desc": "先推理再回答，适合审稿和答辩",
     },
 ]
-
-MODEL_API = {
-    "glm-4-flash": {"provider": "zhipu", "model": FLASH_API_NAME},
-}
 
 DEMO_THESIS = """题目：基于深度学习的校园行人检测与轨迹分析系统
 
@@ -226,18 +193,31 @@ def health_status():
     }
 
 
-def _openai_chat(url, api_key, model, messages, extra_headers=None):
+def _strip_think(text):
+    text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.S)
+    return text.strip()
+
+
+def _openai_chat(url, api_key, model, messages, extra_headers=None, extra_body=None):
     headers = {
         "Authorization": "Bearer " + api_key,
         "Content-Type": "application/json",
     }
     if extra_headers:
         headers.update(extra_headers)
-    payload = {"model": model, "messages": messages, "temperature": 0.4}
+    payload = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0.4,
+        "max_tokens": 2048,
+    }
+    if extra_body:
+        payload.update(extra_body)
     resp = requests.post(url, headers=headers, json=payload, timeout=90)
     resp.raise_for_status()
     data = resp.json()
-    return data["choices"][0]["message"]["content"]
+    message = data["choices"][0]["message"]
+    return _strip_think(message.get("content") or "")
 
 
 def _ernie_chat(messages):
@@ -277,15 +257,18 @@ def call_llm(model_id, system, user, history=None):
             messages.append({"role": role, "content": h.get("content") or ""})
     messages.append({"role": "user", "content": user})
 
+    spec = FREE_MODELS.get(model_id) or FREE_MODELS["glm-4-flash"]
     key = os.environ.get("ZHIPU_API_KEY")
     if not key:
         return None, True
+    extra = {"thinking": {"type": "disabled"}} if spec["thinking"] else None
     try:
         text = _openai_chat(
             "https://open.bigmodel.cn/api/paas/v4/chat/completions",
             key,
-            FLASH_API_NAME,
+            spec["api"],
             messages,
+            extra_body=extra,
         )
         return text, False
     except Exception:
