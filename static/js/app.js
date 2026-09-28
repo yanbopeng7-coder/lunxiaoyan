@@ -62,12 +62,26 @@
     return String(text || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim();
   }
   function liveAsk(action, extra, text, filename) {
-    var tasks = {
-      venue: "根据下面这篇论文，推荐可以投稿的期刊或会议。每条写明名称、为什么适合这篇论文、现在还缺什么。只写建议，不要复述任务说明，也不要再向用户索要正文。",
-      ppt: "根据下面这篇论文，写答辩 PPT 大纲，大约 12 页。每一页给出标题、这一页要讲的一句、对应论文里的哪一部分。再写一段 40 秒开场讲稿。题目、方法和实验必须来自论文。只写大纲和讲稿，不要复述任务说明。"
-    };
-    var ask = tasks[action] || ("请完成功能「" + action + "」。只输出结果，不要复述任务说明。");
-    return ask + "\n文件名：" + (filename || "未命名") + "\n论文正文：\n" + (text || "（尚未提供论文）");
+    extra = extra || {};
+    if (action === "chat") {
+      var hist = extra.history || [];
+      var lines = [];
+      for (var i = 0; i < hist.length; i++) {
+        lines.push((hist[i].role === "user" ? "用户：" : "助手：") + hist[i].content);
+      }
+      var prior = lines.length ? ("此前对话：\n" + lines.join("\n") + "\n\n") : "";
+      return prior + "请直接回答用户这句话。它可能是写作问题，也可能是一段论文。给出具体写法或修改意见。没有单独上传文稿时，按问题本身作答，不要只回复“请提供论文正文”。\n用户：" + (extra.question || text || "");
+    }
+    if (action === "venue") {
+      return "根据下面这篇论文，推荐可以投稿的期刊或会议。每条写明名称、为什么适合这篇论文、现在还缺什么。只写建议，不要复述任务说明。\n文件名：" + (filename || "") + "\n论文正文：\n" + (text || "");
+    }
+    if (action === "ppt") {
+      return "根据下面这篇论文，写答辩 PPT 大纲，大约 12 页。每一页给出标题、这一页要讲的一句、对应论文里的哪一部分。再写一段 40 秒开场讲稿。题目、方法和实验必须来自论文。只写大纲和讲稿。\n文件名：" + (filename || "") + "\n论文正文：\n" + (text || "");
+    }
+    var ask = "请完成功能「" + action + "」。只输出结果，不要复述任务说明。";
+    if (filename) ask += "\n文件名：" + filename;
+    if (text) ask += "\n正文：\n" + text;
+    return ask;
   }
   function callLive(action, extra, text, filename) {
     var spec = currentSpec();
@@ -302,7 +316,8 @@
     if (input && !preset) input.value = "";
     chat.push({ role: "user", content: q });
     drawChat();
-    api("chat", { scene: window.LX_SCENE || "writing", question: q }, "", "").then(function (d) {
+    var prior = chat.slice(0, -1).slice(-6);
+    api("chat", { scene: window.LX_SCENE || "writing", question: q, history: prior }, "", "").then(function (d) {
       chat.push({ role: "bot", content: d.reply || d.llm_text || "已回复" });
       drawChat();
     });
