@@ -1,0 +1,12 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+data/uploads/*
+data/history/*
+!data/uploads/.gitkeep
+!data/history/.gitkeep
+.idea/
+.vscode/
+.tools/

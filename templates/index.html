@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>论小研 · AI 科研论文辅助平台</title>
+  <link rel="stylesheet" href="static/css/style.css?v=10" />
+  <script>
+    function go(id) {
+      var pages = document.querySelectorAll(".page");
+      for (var i = 0; i < pages.length; i++) pages[i].classList.remove("show");
+      var el = document.getElementById("page-" + id);
+      if (el) el.classList.add("show");
+      var radios = document.querySelectorAll('input[name="nav"]');
+      for (var j = 0; j < radios.length; j++) radios[j].checked = radios[j].value === id;
+      try { history.replaceState(null, "", "#" + id); } catch (e) {}
+      window.scrollTo(0, 0);
+      return false;
+    }
+    function setScene(name) {
+      window.LX_SCENE = name;
+      var cards = document.querySelectorAll("#sceneCards .scard");
+      for (var i = 0; i < cards.length; i++) cards[i].classList.toggle("on", cards[i].getAttribute("data-scene") === name);
+      return false;
+    }
+  </script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <div class="logo">论</div>
+        <div><b>论小研</b><span>科研论文辅助 · 国内多模型</span></div>
+      </div>
+
+      <div class="h">系统设置</div>
+      <label class="mini">选择大模型</label>
+      <select id="modelSelect">
+        <option value="glm-4-flash" selected>智谱清言 4-Flash（最快，推荐）</option>
+        <option value="glm-4">智谱清言 GLM-4</option>
+        <option value="deepseek-v3">DeepSeek-V3</option>
+        <option value="deepseek-r1">DeepSeek-R1（深度推理）</option>
+        <option value="qwen-turbo">通义千问 Turbo</option>
+        <option value="qwen-plus">通义千问 Plus</option>
+        <option value="qwen-max">通义千问 Max</option>
+        <option value="kimi-k2">Kimi K2（长文本）</option>
+        <option value="spark-4">讯飞星火 4.0</option>
+        <option value="ernie-4">文心一言 4.0</option>
+      </select>
+      <div class="okbox" id="modelOk">已切换到：智谱清言 4-Flash（最快，推荐）</div>
+      <label class="check"><input type="checkbox" id="darkBox" /> 暗黑模式</label>
+
+      <div class="h">基础功能</div>
+      <div class="nav-group">
+        <label class="nav-item"><input type="radio" name="nav" value="home" checked onclick="go('home')" /> 首页</label>
+        <label class="nav-item"><input type="radio" name="nav" value="chat" onclick="go('chat')" /> 智能论文助手</label>
+        <label class="nav-item"><input type="radio" name="nav" value="evaluate" onclick="go('evaluate')" /> 论文智能评估</label>
+        <label class="nav-item"><input type="radio" name="nav" value="outline" onclick="go('outline')" /> 文献与大纲</label>
+        <label class="nav-item"><input type="radio" name="nav" value="coach" onclick="go('coach')" /> 实时写作陪练</label>
+        <label class="nav-item"><input type="radio" name="nav" value="polish" onclick="go('polish')" /> 初稿润色分析</label>
+        <label class="nav-item"><input type="radio" name="nav" value="abstract" onclick="go('abstract')" /> 摘要与关键词</label>
+        <label class="nav-item"><input type="radio" name="nav" value="refs" onclick="go('refs')" /> 参考文献整理</label>
+      </div>
+      <div class="h">开题选题</div>
+      <div class="nav-group">
+        <label class="nav-item"><input type="radio" name="nav" value="topic" onclick="go('topic')" /> 选题可行性</label>
+        <label class="nav-item"><input type="radio" name="nav" value="proposal" onclick="go('proposal')" /> 开题报告</label>
+        <label class="nav-item"><input type="radio" name="nav" value="litreview" onclick="go('litreview')" /> 文献综述撰写</label>
+        <label class="nav-item"><input type="radio" name="nav" value="schedule" onclick="go('schedule')" /> 进度与任务书</label>
+        <label class="nav-item"><input type="radio" name="nav" value="path" onclick="go('path')" /> 科研路径规划</label>
+      </div>
+      <div class="h">写作表达</div>
+      <div class="nav-group">
+        <label class="nav-item"><input type="radio" name="nav" value="rewrite" onclick="go('rewrite')" /> 学术降重改写</label>
+        <label class="nav-item"><input type="radio" name="nav" value="expand" onclick="go('expand')" /> 章节扩写</label>
+        <label class="nav-item"><input type="radio" name="nav" value="translate" onclick="go('translate')" /> 中英学术翻译</label>
+        <label class="nav-item"><input type="radio" name="nav" value="diff" onclick="go('diff')" /> 两稿对照</label>
+        <label class="nav-item"><input type="radio" name="nav" value="retrospect" onclick="go('retrospect')" /> 论文写作复盘</label>
+      </div>
+      <div class="h">规范与实验</div>
+      <div class="nav-group">
+        <label class="nav-item"><input type="radio" name="nav" value="terms" onclick="go('terms')" /> 术语与缩写表</label>
+        <label class="nav-item"><input type="radio" name="nav" value="formula" onclick="go('formula')" /> 公式与符号</label>
+        <label class="nav-item"><input type="radio" name="nav" value="figure" onclick="go('figure')" /> 图表与表题</label>
+        <label class="nav-item"><input type="radio" name="nav" value="experiment" onclick="go('experiment')" /> 实验设计助手</label>
+        <label class="nav-item"><input type="radio" name="nav" value="reproduce" onclick="go('reproduce')" /> 复现实验清单</label>
+        <label class="nav-item"><input type="radio" name="nav" value="ethics" onclick="go('ethics')" /> 伦理致谢声明</label>
+      </div>
+      <div class="h">答辩投稿</div>
+      <div class="nav-group">
+        <label class="nav-item"><input type="radio" name="nav" value="submit" onclick="go('submit')" /> 投稿适配优化</label>
+        <label class="nav-item"><input type="radio" name="nav" value="reviewer" onclick="go('reviewer')" /> 审稿人模拟</label>
+        <label class="nav-item"><input type="radio" name="nav" value="rebuttal" onclick="go('rebuttal')" /> 审稿意见回复</label>
+        <label class="nav-item"><input type="radio" name="nav" value="venue" onclick="go('venue')" /> 期刊会议推荐</label>
+        <label class="nav-item"><input type="radio" name="nav" value="defense" onclick="go('defense')" /> 答辩模拟</label>
+        <label class="nav-item"><input type="radio" name="nav" value="ppt" onclick="go('ppt')" /> 答辩PPT大纲</label>
+        <label class="nav-item"><input type="radio" name="nav" value="weekly" onclick="go('weekly')" /> 导师周报</label>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="page show" id="page-home">
+        <div class="hero">
+          <h1>🎓 论小研 · AI 科研论文辅助平台</h1>
+          <p>多模型支持 | 全流程写作辅助 | 科研专用版</p>
+        </div>
+        <div class="section-head">
+          <h2>项目核心功能</h2>
+          <p>服务启动成功、模型加载正常。点击卡片进入对应模块。</p>
+        </div>
+        <div class="cards3">
+          <div class="scard c1 feat" onclick="go('evaluate')"><b>论文智能评估</b><span>解析文稿、学术规范检测、多维度评分、优化建议</span></div>
+          <div class="scard c2 feat" onclick="go('outline')"><b>文献大纲生成</b><span>主题拆解、文献推荐、章节大纲、研究问题设计</span></div>
+          <div class="scard c3 feat" onclick="go('coach')"><b>实时写作陪练</b><span>逐段引导写作、内容点评、逻辑优化</span></div>
+        </div>
+        <div class="cards3">
+          <div class="scard c4 feat" onclick="go('polish')"><b>初稿润色分析</b><span>语言润色、逻辑梳理、学术表达优化</span></div>
+          <div class="scard c5 feat" onclick="go('refs')"><b>参考文献整理</b><span>批量格式化、国标输出、引用校验</span></div>
+          <div class="scard c1 feat" onclick="go('chat')"><b>智能论文助手</b><span>场景化问答、多轮对话、导出记录</span></div>
+        </div>
+        <div class="card">
+          <b>核心亮点：一键论文全流程辅助</b>
+          <p style="color:var(--muted);font-size:13.5px">上传初稿后自动：内容评估 → 大纲优化 → 语言润色 → 参考文献整理 → 完整优化报告。演示用例《计算机专业本科毕业论文初稿.docx》。</p>
+          <div class="drop" id="pipeDrop">拖拽 / 点击上传 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="pipeFileLabel" style="color:var(--muted);font-size:12px">尚未选择文件</p>
+          <button class="btn ghost" type="button" onclick="loadDemo('pipeline')">载入演示用例</button>
+          <button class="btn gold" type="button" onclick="runPipe()">一键启动全流程</button>
+          <div id="pipeResult"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-chat">
+        <div class="hero">
+          <h1>🎓 论小研 · 智能论文助手</h1>
+          <p>多模型支持 | 全流程写作辅助 | 科研专用版</p>
+        </div>
+        <div class="section-head">
+          <h2>智能论文助手</h2>
+          <p>自然对话交互，一站式解决开题、写作、文献、答辩问题</p>
+        </div>
+        <div class="badge" id="speedBadge">极速模式：智谱清言 4-Flash</div>
+        <div class="cards3" id="sceneCards">
+          <div class="scard c1 on" data-scene="writing" onclick="setScene('writing')"><b>论文写作</b><span>大纲设计、内容扩充、摘要撰写、降重表达</span></div>
+          <div class="scard c2" data-scene="lit" onclick="setScene('lit')"><b>文献辅助</b><span>文献总结、研究对比、创新点提炼、开题报告辅助</span></div>
+          <div class="scard c3" data-scene="guide" onclick="setScene('guide')"><b>科研指导</b><span>选题建议、研究方法、投稿技巧、学术规范</span></div>
+        </div>
+        <p style="color:var(--muted);font-size:13px">试试这些问题：</p>
+        <div class="qrow">
+          <button class="qbtn" type="button" onclick="ask('论文大纲怎么写？')">论文大纲怎么写</button>
+          <button class="qbtn" type="button" onclick="ask('摘要优化建议')">摘要优化建议</button>
+          <button class="qbtn" type="button" onclick="ask('文献怎么总结？')">文献怎么总结</button>
+          <button class="qbtn" type="button" onclick="ask('答辩老师最爱问什么？')">答辩高频问题</button>
+        </div>
+        <div class="card">
+          <b>对话记录</b>
+          <div class="chat-log" id="chatLog"><p style="color:var(--muted)">选择场景后，点击快捷问题或在下方提问。</p></div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <input type="text" id="chatInput" placeholder="自由提问，例如：帮我评估这篇论文的摘要" />
+            <button class="btn" type="button" onclick="sendChat()">发送</button>
+            <button class="btn ghost" type="button" onclick="exportChat()">导出</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="page-evaluate">
+        <div class="hero"><h1>论文智能评估</h1><p>解析文稿 · 学术规范检测 · 多维度评分</p></div>
+        <div class="card">
+          <div class="drop" data-key="evaluate">拖拽 / 点击上传论文 docx、pdf<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="evaluateFileLabel" style="color:var(--muted);font-size:12px">尚未选择文件</p>
+          <button class="btn ghost" type="button" onclick="loadDemo('evaluate')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('evaluate')">开始评估</button>
+          <div class="report" id="evaluateOut"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-outline">
+        <div class="hero"><h1>个性化文献与大纲生成</h1><p>章节大纲 · 核心文献 · 研究问题</p></div>
+        <div class="card">
+          <label class="mini">研究主题</label>
+          <input type="text" id="outlineTopic" placeholder="例如：校园行人检测与轨迹分析" />
+          <div class="drop" data-key="outline">可上传初稿辅助生成<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <button class="btn ghost" type="button" onclick="loadDemo('outline')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('outline')">生成大纲与文献</button>
+          <div class="report" id="outlineOut"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-coach">
+        <div class="hero"><h1>实时写作陪练</h1><p>导师引导 → 你撰写 → AI 点评</p></div>
+        <div class="card">
+          <p>演示引导题：请阐述本研究的核心创新点与现有方案的差异</p>
+          <div class="drop" data-key="coach">上传大纲 / 已写片段<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <textarea id="coachAns" placeholder="文本输入作答…"></textarea>
+          <button class="btn ghost" type="button" onclick="loadDemo('coach')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('coach')">提交点评</button>
+          <div class="report" id="coachOut"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-polish">
+        <div class="hero"><h1>论文初稿润色分析</h1><p>语言、逻辑与学术表达</p></div>
+        <div class="card">
+          <div class="drop" data-key="polish">上传论文初稿（演示为 docx）<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="polishFileLabel" style="color:var(--muted);font-size:12px">尚未选择文件</p>
+          <button class="btn ghost" type="button" onclick="loadDemo('polish')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('polish')">开始润色分析</button>
+          <div class="report" id="polishOut"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-abstract">
+        <div class="hero"><h1>摘要与关键词生成</h1><p>中文摘要 · 英文摘要 · 关键词 3–5 个</p></div>
+        <div class="card">
+          <label class="mini">目标期刊 / 学位要求</label>
+          <input type="text" id="absReq" value="本科毕业论文摘要" />
+          <div class="drop" data-key="abstract">上传论文正文<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <button class="btn ghost" type="button" onclick="loadDemo('abstract')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('abstract')">一键生成摘要</button>
+          <div class="report" id="abstractOut"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-refs">
+        <div class="hero"><h1>参考文献格式化助手</h1><p>默认 GB/T 7714-2015 顺序编码制</p></div>
+        <div class="card">
+          <select id="refStd"><option>GB/T 7714-2015 顺序编码制</option><option>GB/T 7714-2015 著者-出版年制</option><option>APA 7th</option></select>
+          <textarea id="refRaw" placeholder="粘贴文献列表，或上传文档批量导入"></textarea>
+          <div class="drop" data-key="refs">批量导入文件<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <button class="btn" type="button" onclick="runTool('refs')">生成格式化结果</button>
+          <button class="btn ghost" type="button" onclick="copyOut('refs')">一键复制</button>
+          <div class="report" id="refsOut"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-topic">
+        <div class="hero"><h1>选题可行性评估</h1><p>空白、风险、工作量与题目改写</p></div>
+        <div class="card">
+          <input type="text" id="topicName" placeholder="拟题 / 方向，例如校园行人检测" />
+          <button class="btn" type="button" onclick="runTool('topic')">评估选题</button>
+          <div class="report" id="topicOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-proposal">
+        <div class="hero"><h1>开题报告生成</h1><p>依据、内容、方案、12 周进度</p></div>
+        <div class="card">
+          <input type="text" id="propTopic" placeholder="研究主题" />
+          <button class="btn ghost" type="button" onclick="loadDemo('proposal')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('proposal')">生成开题报告</button>
+          <div class="report" id="proposalOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-litreview">
+        <div class="hero"><h1>文献综述撰写</h1><p>按技术线，不要编年体</p></div>
+        <div class="card">
+          <div class="drop" data-key="litreview">可上传已有综述草稿<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <button class="btn ghost" type="button" onclick="loadDemo('litreview')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('litreview')">生成综述结构</button>
+          <div class="report" id="litreviewOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-schedule">
+        <div class="hero"><h1>进度与任务书</h1><p>里程碑与每周交付物</p></div>
+        <div class="card"><button class="btn" type="button" onclick="runTool('schedule')">生成任务书</button><div class="report" id="scheduleOut"></div></div>
+      </section>
+      <section class="page" id="page-path">
+        <div class="hero"><h1>科研路径规划</h1><p>短期提升与中长期方向</p></div>
+        <div class="card">
+          <input type="text" id="pathMajor" placeholder="专业，如计算机科学与技术" />
+          <input type="text" id="pathSkills" placeholder="已掌握技能" style="margin-top:8px" />
+          <input type="text" id="pathInterest" placeholder="研究兴趣" style="margin-top:8px" />
+          <div class="drop" data-key="path">上传课程作业 / 课程论文<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <button class="btn" type="button" onclick="runTool('path')">生成规划路线</button>
+          <div class="report" id="pathOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-rewrite">
+        <div class="hero"><h1>学术降重改写</h1><p>按场景和数据改写，禁止无意义同义替换</p></div>
+        <div class="card">
+          <textarea id="rewriteSrc" placeholder="粘贴待改写段落"></textarea>
+          <button class="btn" type="button" onclick="runTool('rewrite')">开始降重改写</button>
+          <div class="report" id="rewriteOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-expand">
+        <div class="hero"><h1>章节扩写</h1><p>提纲扩成可粘贴学术段落</p></div>
+        <div class="card">
+          <select id="expandChap"><option>绪论 / 创新点</option><option>相关工作</option><option>方法设计</option><option>实验验证</option><option>总结展望</option></select>
+          <button class="btn ghost" type="button" onclick="loadDemo('expand')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('expand')">扩写本章</button>
+          <div class="report" id="expandOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-translate">
+        <div class="hero"><h1>中英学术翻译</h1><p>保留 mAP 等指标符号</p></div>
+        <div class="card">
+          <textarea id="transSrc" placeholder="中文或英文段落"></textarea>
+          <button class="btn" type="button" onclick="runTool('translate')">生成译文</button>
+          <div class="report" id="translateOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-diff">
+        <div class="hero"><h1>两稿对照</h1><p>进步点与未改的高优先级项</p></div>
+        <div class="card">
+          <textarea id="diffNote" placeholder="修改说明或第二版摘录"></textarea>
+          <button class="btn ghost" type="button" onclick="loadDemo('diff')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('diff')">生成对照</button>
+          <div class="report" id="diffOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-retrospect">
+        <div class="hero"><h1>论文写作复盘</h1><p>对照多次评估 / 润色记录</p></div>
+        <div class="card">
+          <button class="btn" type="button" onclick="runTool('retrospect')">生成结构化复盘</button>
+          <div class="report" id="retrospectOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-terms">
+        <div class="hero"><h1>术语与缩写表</h1><p></p></div>
+        <div class="card"><button class="btn" type="button" onclick="runTool('terms')">生成术语表</button><div class="report" id="termsOut"></div></div>
+      </section>
+      <section class="page" id="page-formula">
+        <div class="hero"><h1>公式与符号规范</h1><p></p></div>
+        <div class="card"><button class="btn" type="button" onclick="runTool('formula')">生成符号表</button><div class="report" id="formulaOut"></div></div>
+      </section>
+      <section class="page" id="page-figure">
+        <div class="hero"><h1>图表与表题</h1><p></p></div>
+        <div class="card">
+          <div class="drop" data-key="figure">可上传论文<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <button class="btn" type="button" onclick="runTool('figure')">生成图表题</button>
+          <div class="report" id="figureOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-experiment">
+        <div class="hero"><h1>实验设计助手</h1><p></p></div>
+        <div class="card"><button class="btn" type="button" onclick="runTool('experiment')">生成实验方案</button><div class="report" id="experimentOut"></div></div>
+      </section>
+      <section class="page" id="page-reproduce">
+        <div class="hero"><h1>复现实验清单</h1><p></p></div>
+        <div class="card"><button class="btn" type="button" onclick="runTool('reproduce')">生成复现清单</button><div class="report" id="reproduceOut"></div></div>
+      </section>
+      <section class="page" id="page-ethics">
+        <div class="hero"><h1>伦理、致谢与原创声明</h1><p></p></div>
+        <div class="card"><button class="btn" type="button" onclick="runTool('ethics')">生成声明草稿</button><div class="report" id="ethicsOut"></div></div>
+      </section>
+      <section class="page" id="page-submit">
+        <div class="hero"><h1>投稿适配智能优化</h1><p>对照期刊指南 / 学校规范</p></div>
+        <div class="card">
+          <textarea id="subGuide" placeholder="粘贴投稿指南或学校论文规范"></textarea>
+          <div class="drop" data-key="submit">上传论文初稿<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <button class="btn ghost" type="button" onclick="loadDemo('submit')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('submit')">对照优化</button>
+          <div class="report" id="submitOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-reviewer">
+        <div class="hero"><h1>多风格审稿人模拟</h1><p>温和导师 · 严格学术 · 交叉学科</p></div>
+        <div class="card">
+          <div class="qrow">
+            <button class="qbtn" type="button" onclick="window.LX_STYLE='gentle'">温和导师型</button>
+            <button class="qbtn" type="button" onclick="window.LX_STYLE='strict'">严格学术型</button>
+            <button class="qbtn" type="button" onclick="window.LX_STYLE='cross'">交叉学科评审</button>
+          </div>
+          <div class="drop" data-key="reviewer">上传论文<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <button class="btn ghost" type="button" onclick="loadDemo('reviewer')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('reviewer')">生成评审意见</button>
+          <div class="report" id="reviewerOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-rebuttal">
+        <div class="hero"><h1>审稿意见回复</h1><p></p></div>
+        <div class="card">
+          <textarea id="rebRaw" placeholder="粘贴审稿人意见"></textarea>
+          <button class="btn" type="button" onclick="runTool('rebuttal')">生成回复草稿</button>
+          <div class="report" id="rebuttalOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-venue">
+        <div class="hero"><h1>期刊 / 会议推荐</h1><p></p></div>
+        <div class="card"><button class="btn" type="button" onclick="runTool('venue')">生成去向建议</button><div class="report" id="venueOut"></div></div>
+      </section>
+      <section class="page" id="page-defense">
+        <div class="hero"><h1>答辩提问模拟</h1><p></p></div>
+        <div class="card">
+          <div class="drop" data-key="defense">可上传论文<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <button class="btn ghost" type="button" onclick="loadDemo('defense')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('defense')">生成答辩题</button>
+          <div class="report" id="defenseOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-ppt">
+        <div class="hero"><h1>答辩 PPT 大纲</h1><p>12 页结构与开场讲稿</p></div>
+        <div class="card"><button class="btn" type="button" onclick="runTool('ppt')">生成 PPT 大纲</button><div class="report" id="pptOut"></div></div>
+      </section>
+      <section class="page" id="page-weekly">
+        <div class="hero"><h1>导师周报与邮件</h1><p></p></div>
+        <div class="card">
+          <textarea id="weekNote" placeholder="本周实际进展（可空）"></textarea>
+          <button class="btn" type="button" onclick="runTool('weekly')">生成周报</button>
+          <div class="report" id="weeklyOut"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+  <div class="overlay" id="overlay"><div class="box"><div class="spin"></div><div id="overlayText">生成中…</div></div></div>
+  <script src="static/js/pages-demo.js?v=10"></script>
+  <script src="static/js/app.js?v=10"></script>
+</body>
+</html>
