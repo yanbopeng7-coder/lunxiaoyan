@@ -40,15 +40,16 @@ d:\py\Anaconda3\python.exe build_pages.py
 
 默认：**智谱清言 4-Flash**。下拉里每一项都请求对应模型，互不混用。
 
-五个智谱清言共用智谱密钥。通义千问 2.5-7B 和通义千问 3.5-4B 走硅基流动，要另填硅基流动密钥。
+五个智谱清言共用智谱密钥。通义千问 2.5-7B 和 3.5-4B 走硅基流动。通义千问 3.8-27B 和 GPT-OSS 120B 走 Groq，本地读取 `.env` 里的 `GROQ_API_KEY`。这把密钥不写入公开网页。
 
-网页版密钥只存在这台浏览器里。本地 `启动论小研.bat` 读取 `.env` 里的 `ZHIPU_API_KEY` 和 `SILICONFLOW_API_KEY`。
+网页版里智谱和硅基流动的密钥只存在这台浏览器里。本地 `启动论小研.bat` 读取 `.env` 里的 `ZHIPU_API_KEY`、`SILICONFLOW_API_KEY` 和 `GROQ_API_KEY`。
 
 将 `.env.example` 复制为 `.env` 后填写对应密钥：
 
 ```
 ZHIPU_API_KEY=
 SILICONFLOW_API_KEY=
+GROQ_API_KEY=
 DEEPSEEK_API_KEY=
 DASHSCOPE_API_KEY=
 MOONSHOT_API_KEY=
@@ -57,7 +58,7 @@ BAIDU_SECRET_KEY=
 SPARK_API_KEY=
 ```
 
-实际会用到的是 `ZHIPU_API_KEY` 和 `SILICONFLOW_API_KEY`。没填对应密钥时，那个模型会回退到本地示例。
+实际会用到的是 `ZHIPU_API_KEY`、`SILICONFLOW_API_KEY` 和 `GROQ_API_KEY`。没填对应密钥时，那个模型会回退到本地示例。
 
 ## 页面
 

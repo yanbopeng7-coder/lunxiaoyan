@@ -38,11 +38,14 @@
     "glm-4.5-flash": { api: "glm-4.5-flash", thinking: true, provider: "zhipu" },
     "glm-z1-flash": { api: "glm-z1-flash", thinking: true, provider: "zhipu" },
     "qwen25-7b": { api: "Qwen/Qwen2.5-7B-Instruct", thinking: false, provider: "silicon" },
-    "qwen35-4b": { api: "Qwen/Qwen3.5-4B", thinking: true, provider: "silicon" }
+    "qwen35-4b": { api: "Qwen/Qwen3.5-4B", thinking: true, provider: "silicon" },
+    "groq-qwen38": { api: "qwen/qwen3.8-27b", thinking: false, provider: "groq" },
+    "groq-gpt120": { api: "openai/gpt-oss-120b", thinking: false, provider: "groq" }
   };
   var LIVE_URLS = {
     zhipu: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
-    silicon: "https://api.siliconflow.cn/v1/chat/completions"
+    silicon: "https://api.siliconflow.cn/v1/chat/completions",
+    groq: "https://api.groq.com/openai/v1/chat/completions"
   };
   function zhipuKey() {
     var box = $("zhipuKey");
@@ -52,11 +55,16 @@
     var box = $("siliconKey");
     return ((box && box.value) || localStorage.getItem("lx.silicon") || "").trim();
   }
+  function groqKey() {
+    return (localStorage.getItem("lx.groq") || "").trim();
+  }
   function currentSpec() {
     return LIVE_MODELS[modelId()] || LIVE_MODELS["glm-4-flash"];
   }
   function keyFor(spec) {
-    return spec.provider === "silicon" ? siliconKey() : zhipuKey();
+    if (spec.provider === "silicon") return siliconKey();
+    if (spec.provider === "groq") return groqKey();
+    return zhipuKey();
   }
   function stripThink(text) {
     return String(text || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim();
@@ -135,7 +143,7 @@
       var spec = currentSpec();
       if (!keyFor(spec)) {
         loading(false);
-        toast(spec.provider === "silicon" ? "通义千问要填硅基流动密钥" : "先在左侧填写智谱密钥，才会请求对应模型");
+        toast(spec.provider === "silicon" ? "通义千问要填硅基流动密钥" : (spec.provider === "groq" ? "Groq 请用本机启动的页面，密钥不能放进公开网站" : "先在左侧填写智谱密钥，才会请求对应模型"));
         return Promise.resolve(localResult(action, extra, text, filename));
       }
       return callLive(action, extra, text, filename).then(function (d) {

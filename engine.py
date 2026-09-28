@@ -21,6 +21,8 @@ FREE_MODELS = {
     "glm-z1-flash": {"api": "glm-z1-flash", "thinking": True, "provider": "zhipu"},
     "qwen25-7b": {"api": "Qwen/Qwen2.5-7B-Instruct", "thinking": False, "provider": "silicon"},
     "qwen35-4b": {"api": "Qwen/Qwen3.5-4B", "thinking": True, "provider": "silicon"},
+    "groq-qwen38": {"api": "qwen/qwen3.8-27b", "thinking": False, "provider": "groq"},
+    "groq-gpt120": {"api": "openai/gpt-oss-120b", "thinking": False, "provider": "groq"},
 }
 
 PROVIDERS = {
@@ -31,6 +33,10 @@ PROVIDERS = {
     "silicon": {
         "url": "https://api.siliconflow.cn/v1/chat/completions",
         "env": "SILICONFLOW_API_KEY",
+    },
+    "groq": {
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "env": "GROQ_API_KEY",
     },
 }
 
@@ -83,6 +89,20 @@ MODELS = [
         "tag": "写作",
         "vendor": "阿里云",
         "desc": "通义轻量模型，适合段落写作",
+    },
+    {
+        "id": "groq-qwen38",
+        "name": "通义千问 3.8-27B",
+        "tag": "Groq",
+        "vendor": "Groq",
+        "desc": "通义 27B，由 Groq 托管",
+    },
+    {
+        "id": "groq-gpt120",
+        "name": "GPT-OSS 120B",
+        "tag": "长文",
+        "vendor": "Groq",
+        "desc": "开源大模型，适合较长回答",
     },
 ]
 
@@ -200,6 +220,7 @@ def provider_status():
     return {
         "zhipu": bool(os.environ.get("ZHIPU_API_KEY")),
         "silicon": bool(os.environ.get("SILICONFLOW_API_KEY")),
+        "groq": bool(os.environ.get("GROQ_API_KEY")),
         "deepseek": bool(os.environ.get("DEEPSEEK_API_KEY")),
         "qwen": bool(os.environ.get("DASHSCOPE_API_KEY")),
         "kimi": bool(os.environ.get("MOONSHOT_API_KEY")),

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=20" />
+  <link rel="stylesheet" href="static/css/style.css?v=21" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -46,6 +46,10 @@
         <optgroup label="通义千问">
           <option value="qwen25-7b">通义千问 2.5-7B（对话）</option>
           <option value="qwen35-4b">通义千问 3.5-4B（写作）</option>
+        </optgroup>
+        <optgroup label="Groq">
+          <option value="groq-qwen38">通义千问 3.8-27B（Groq）</option>
+          <option value="groq-gpt120">GPT-OSS 120B（长文）</option>
         </optgroup>
       </select>
       <label class="check"><input type="checkbox" id="darkBox" /> 暗黑模式</label>
@@ -419,10 +423,10 @@
   </div>
   <div class="toast" id="toast"></div>
   <div class="overlay" id="overlay"><div class="box"><div class="spin"></div><div id="overlayText">生成中…</div></div></div>
-  <script src="static/vendor/fflate.min.js?v=20"></script>
-  <script src="static/vendor/pdf.min.js?v=20"></script>
-  <script src="static/js/readfile.js?v=20"></script>
-  <script src="static/js/pages-demo.js?v=20"></script>
-  <script src="static/js/app.js?v=20"></script>
+  <script src="static/vendor/fflate.min.js?v=21"></script>
+  <script src="static/vendor/pdf.min.js?v=21"></script>
+  <script src="static/js/readfile.js?v=21"></script>
+  <script src="static/js/pages-demo.js?v=21"></script>
+  <script src="static/js/app.js?v=21"></script>
 </body>
 </html>
