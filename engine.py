@@ -771,6 +771,10 @@ def run_module(action, payload):
         "reviewer": u"风格：%s\n论文：\n%s" % (extra.get("style") or "gentle", _clip(text)),
         "retrospect": u"历史记录：\n%s" % json.dumps(extra.get("records") or [], ensure_ascii=False)[:4000],
         "pipeline": u"请输出全流程优化报告。文件：%s\n%s" % (filename, _clip(text)),
+        "venue": u"根据这篇论文推荐期刊或会议，说明适合原因和投稿前要补的内容。不要向用户索要正文。\n文件：%s\n论文：\n%s"
+        % (filename, _clip(text)),
+        "ppt": u"根据这篇论文写约12页答辩PPT大纲和40秒开场讲稿。每页对应论文中的题目、方法或实验。不要复述任务说明。\n文件：%s\n论文：\n%s"
+        % (filename, _clip(text)),
     }
     sys_p = SYSTEM_PROMPTS.get(action) or SYSTEM_PROMPTS["chat"]
     user = user_map.get(action) or (

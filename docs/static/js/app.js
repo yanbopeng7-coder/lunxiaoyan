@@ -61,6 +61,14 @@
   function stripThink(text) {
     return String(text || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim();
   }
+  function liveAsk(action, extra, text, filename) {
+    var tasks = {
+      venue: "根据下面这篇论文，推荐可以投稿的期刊或会议。每条写明名称、为什么适合这篇论文、现在还缺什么。只写建议，不要复述任务说明，也不要再向用户索要正文。",
+      ppt: "根据下面这篇论文，写答辩 PPT 大纲，大约 12 页。每一页给出标题、这一页要讲的一句、对应论文里的哪一部分。再写一段 40 秒开场讲稿。题目、方法和实验必须来自论文。只写大纲和讲稿，不要复述任务说明。"
+    };
+    var ask = tasks[action] || ("请完成功能「" + action + "」。只输出结果，不要复述任务说明。");
+    return ask + "\n文件名：" + (filename || "未命名") + "\n论文正文：\n" + (text || "（尚未提供论文）");
+  }
   function callLive(action, extra, text, filename) {
     var spec = currentSpec();
     var body = {
@@ -69,7 +77,7 @@
       max_tokens: 2048,
       messages: [
         { role: "system", content: "你是论小研，面向本科生与研究生的科研论文写作助手。用中文给出可执行的结果，紧扣用户原文，不要空泛套话。" },
-        { role: "user", content: "功能：" + action + "\n文件：" + (filename || "") + "\n附加：" + JSON.stringify(extra || {}) + "\n正文：\n" + (text || "") }
+        { role: "user", content: liveAsk(action, extra, text, filename) }
       ]
     };
     if (spec.thinking && spec.provider === "zhipu") body.thinking = { type: "disabled" };
@@ -249,6 +257,10 @@
     var f = fileOf(key);
     var text = textOf(key);
     var need = { evaluate: 1, polish: 1, abstract: 1, submit: 1, reviewer: 1 };
+    if ((key === "venue" || key === "ppt") && !text) {
+      toast("请先上传论文，再生成");
+      return;
+    }
     var start = function () {
       return api(key, extraOf(key), textOf(key), fileOf(key).name).then(function (d) {
         last[key] = d;

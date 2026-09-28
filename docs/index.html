@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=16" />
+  <link rel="stylesheet" href="static/css/style.css?v=17" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -380,8 +380,14 @@
         </div>
       </section>
       <section class="page" id="page-venue">
-        <div class="hero"><h1>期刊 / 会议推荐</h1><p></p></div>
-        <div class="card"><button class="btn" type="button" onclick="runTool('venue')">生成去向建议</button><div class="report" id="venueOut"></div></div>
+        <div class="hero"><h1>期刊 / 会议推荐</h1><p>按上传的论文推荐去向</p></div>
+        <div class="card">
+          <div class="drop" data-key="venue">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="venueFileLabel">尚未选择文件</p>
+          <button class="btn ghost" type="button" onclick="loadDemo('venue')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('venue')">生成去向建议</button>
+          <div class="report" id="venueOut"></div>
+        </div>
       </section>
       <section class="page" id="page-defense">
         <div class="hero"><h1>答辩提问模拟</h1><p></p></div>
@@ -393,8 +399,14 @@
         </div>
       </section>
       <section class="page" id="page-ppt">
-        <div class="hero"><h1>答辩 PPT 大纲</h1><p>12 页结构与开场讲稿</p></div>
-        <div class="card"><button class="btn" type="button" onclick="runTool('ppt')">生成 PPT 大纲</button><div class="report" id="pptOut"></div></div>
+        <div class="hero"><h1>答辩 PPT 大纲</h1><p>按上传的论文写 12 页结构与开场讲稿</p></div>
+        <div class="card">
+          <div class="drop" data-key="ppt">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="pptFileLabel">尚未选择文件</p>
+          <button class="btn ghost" type="button" onclick="loadDemo('ppt')">使用演示用例</button>
+          <button class="btn" type="button" onclick="runTool('ppt')">生成 PPT 大纲</button>
+          <div class="report" id="pptOut"></div>
+        </div>
       </section>
       <section class="page" id="page-weekly">
         <div class="hero"><h1>导师周报与邮件</h1><p></p></div>
@@ -408,10 +420,10 @@
   </div>
   <div class="toast" id="toast"></div>
   <div class="overlay" id="overlay"><div class="box"><div class="spin"></div><div id="overlayText">生成中…</div></div></div>
-  <script src="static/vendor/fflate.min.js?v=16"></script>
-  <script src="static/vendor/pdf.min.js?v=16"></script>
-  <script src="static/js/readfile.js?v=16"></script>
-  <script src="static/js/pages-demo.js?v=16"></script>
-  <script src="static/js/app.js?v=16"></script>
+  <script src="static/vendor/fflate.min.js?v=17"></script>
+  <script src="static/vendor/pdf.min.js?v=17"></script>
+  <script src="static/js/readfile.js?v=17"></script>
+  <script src="static/js/pages-demo.js?v=17"></script>
+  <script src="static/js/app.js?v=17"></script>
 </body>
 </html>
