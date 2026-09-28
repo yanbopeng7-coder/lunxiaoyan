@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=18" />
+  <link rel="stylesheet" href="static/css/style.css?v=19" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -159,6 +159,8 @@
         <div class="card">
           <b>对话记录</b>
           <div class="chat-log" id="chatLog"><p style="color:var(--muted)">选择场景后，点击快捷问题或在下方提问。</p></div>
+          <div class="drop" data-key="chat">拖拽 / 点击上传论文，之后的提问都会带上这篇文稿<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="chatFileLabel">尚未选择文件</p>
           <div style="display:flex;gap:8px;margin-top:8px">
             <input type="text" id="chatInput" placeholder="自由提问，例如：帮我评估这篇论文的摘要" />
             <button class="btn" type="button" onclick="sendChat()">发送</button>
@@ -420,10 +422,10 @@
   </div>
   <div class="toast" id="toast"></div>
   <div class="overlay" id="overlay"><div class="box"><div class="spin"></div><div id="overlayText">生成中…</div></div></div>
-  <script src="static/vendor/fflate.min.js?v=18"></script>
-  <script src="static/vendor/pdf.min.js?v=18"></script>
-  <script src="static/js/readfile.js?v=18"></script>
-  <script src="static/js/pages-demo.js?v=18"></script>
-  <script src="static/js/app.js?v=18"></script>
+  <script src="static/vendor/fflate.min.js?v=19"></script>
+  <script src="static/vendor/pdf.min.js?v=19"></script>
+  <script src="static/js/readfile.js?v=19"></script>
+  <script src="static/js/pages-demo.js?v=19"></script>
+  <script src="static/js/app.js?v=19"></script>
 </body>
 </html>

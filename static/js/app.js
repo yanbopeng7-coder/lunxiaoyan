@@ -70,7 +70,13 @@
         lines.push((hist[i].role === "user" ? "用户：" : "助手：") + hist[i].content);
       }
       var prior = lines.length ? ("此前对话：\n" + lines.join("\n") + "\n\n") : "";
-      return prior + "请直接回答用户这句话。它可能是写作问题，也可能是一段论文。给出具体写法或修改意见。没有单独上传文稿时，按问题本身作答，不要只回复“请提供论文正文”。\n用户：" + (extra.question || text || "");
+      var paper = "";
+      if (text) {
+        var body = String(text);
+        if (body.length > 5000) body = body.slice(0, 5000) + "\n…（后文已截断）";
+        paper = "\n已上传论文《" + (filename || "文稿") + "》。回答必须紧扣这篇论文，不要再索要正文。\n论文正文：\n" + body + "\n";
+      }
+      return prior + "请直接回答用户这句话。给出具体写法或修改意见。没有上传论文时，按问题本身作答，不要只回复“请提供论文正文”。" + paper + "\n用户：" + (extra.question || "");
     }
     if (action === "venue") {
       return "根据下面这篇论文，推荐可以投稿的期刊或会议。每条写明名称、为什么适合这篇论文、现在还缺什么。只写建议，不要复述任务说明。\n文件名：" + (filename || "") + "\n论文正文：\n" + (text || "");
@@ -317,7 +323,8 @@
     chat.push({ role: "user", content: q });
     drawChat();
     var prior = chat.slice(0, -1).slice(-6);
-    api("chat", { scene: window.LX_SCENE || "writing", question: q, history: prior }, "", "").then(function (d) {
+    var paper = fileOf("chat");
+    api("chat", { scene: window.LX_SCENE || "writing", question: q, history: prior }, paper.text || "", paper.name || "").then(function (d) {
       chat.push({ role: "bot", content: d.reply || d.llm_text || "已回复" });
       drawChat();
     });

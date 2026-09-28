@@ -756,8 +756,14 @@ def run_module(action, payload):
     history = payload.get("history") or []
 
     user_map = {
-        "chat": u"场景：%s\n问题：%s\n附加文稿：%s"
-        % (extra.get("scene") or "writing", extra.get("question") or text, _clip(text, 2500)),
+        "chat": (
+            u"场景：%s\n问题：%s%s"
+            % (
+                extra.get("scene") or "writing",
+                extra.get("question") or text,
+                (u"\n已上传论文《%s》，回答必须紧扣正文：\n%s" % (filename, _clip(text, 5000))) if text else u"",
+            )
+        ),
         "evaluate": u"文件名：%s\n请评估：\n%s" % (filename, _clip(text)),
         "outline": u"主题：%s\n文稿：\n%s" % (extra.get("topic") or _guess_topic(text, filename), _clip(text, 3500)),
         "coach": u"章节：%s\n学生作答：%s\n文稿摘录：%s"
