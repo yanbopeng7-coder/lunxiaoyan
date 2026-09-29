@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=22" />
+  <link rel="stylesheet" href="static/css/style.css?v=23" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -229,9 +229,9 @@
       </section>
 
       <section class="page" id="page-refs">
-        <div class="hero"><h1>参考文献格式化助手</h1><p>默认 GB/T 7714-2015 顺序编码制</p></div>
+        <div class="hero"><h1>参考文献格式化助手</h1><p>默认 GB/T 7714—2025 顺序编码制</p></div>
         <div class="card">
-          <select id="refStd"><option>GB/T 7714-2015 顺序编码制</option><option>GB/T 7714-2015 著者-出版年制</option><option>APA 7th</option></select>
+          <select id="refStd"><option>GB/T 7714—2025 顺序编码制</option><option>GB/T 7714—2025 著者-出版年制</option><option>APA 7th</option></select>
           <textarea id="refRaw" placeholder="粘贴文献列表，或上传文档批量导入"></textarea>
           <div class="drop" data-key="refs">批量导入文件<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
           <button class="btn" type="button" onclick="runTool('refs')">生成格式化结果</button>
@@ -423,10 +423,10 @@
   </div>
   <div class="toast" id="toast"></div>
   <div class="overlay" id="overlay"><div class="box"><div class="spin"></div><div id="overlayText">生成中…</div></div></div>
-  <script src="static/vendor/fflate.min.js?v=22"></script>
-  <script src="static/vendor/pdf.min.js?v=22"></script>
-  <script src="static/js/readfile.js?v=22"></script>
-  <script src="static/js/pages-demo.js?v=22"></script>
-  <script src="static/js/app.js?v=22"></script>
+  <script src="static/vendor/fflate.min.js?v=23"></script>
+  <script src="static/vendor/pdf.min.js?v=23"></script>
+  <script src="static/js/readfile.js?v=23"></script>
+  <script src="static/js/pages-demo.js?v=23"></script>
+  <script src="static/js/app.js?v=23"></script>
 </body>
 </html>

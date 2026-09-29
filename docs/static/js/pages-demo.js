@@ -123,7 +123,7 @@
       var raw = text || "Redmon J. YOLOv3[J]. arXiv, 2018.";
       return pack([
         { title: "整理结果", pre: "[1] " + clip(raw.replace(/\n/g, " "), 180) },
-        { title: "校验说明", items: ["按 GB/T 7714-2015 顺序编码制", "检查缺卷期页码", "中英文标点统一"] }
+        { title: "校验说明", items: ["按 GB/T 7714—2025 顺序编码制", "西文姓仅首字母大写", "预印本用 PP/OL，不用 EB/OL", "检查缺卷期页码"] }
       ], { formatted: "[1] " + clip(raw.replace(/\n/g, " "), 180) });
     }
     if (action === "path") {

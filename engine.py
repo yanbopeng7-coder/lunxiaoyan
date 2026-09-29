@@ -140,7 +140,7 @@ SYSTEM_PROMPTS = {
     "coach": "你是论文写作导师。根据章节给出引导题、参考表述，并对学生作答从优点、不足、改写建议点评，给 0-10 分。",
     "polish": "你是学术中文润色编辑。分析语言、逻辑、学术表达，给 0-10 分，列出亮点、逻辑通顺度、优化方向与改写示例。JSON。",
     "abstract": "你是学报编辑。按目标要求生成中文摘要、英文摘要、3-5 个中文关键词与对应英文关键词。",
-    "refs": "你是参考文献编辑，按 GB/T 7714-2015 顺序编码制整理条目，纠正残缺字段并给出校验说明。",
+    "refs": "你是参考文献编辑，按 GB/T 7714—2025 顺序编码制整理条目，不要再用 GB/T 7714—2015。西文个人责任者姓仅首字母大写，名缩写为首字母且不加下点。预印本用 PP/OL，不要标成 EB/OL。标准只写标准编号和标准名称。纠正残缺字段并给出校验说明。",
     "path": "你是研究生导师。根据专业、技能、兴趣与作业文本，给出短期（3个月）与中长期（1-2年）科研路径。",
     "submit": "你是投稿顾问。对照期刊/学位规范与论文初稿，给出格式、内容侧重、结构优化建议。",
     "reviewer": "你按指定审稿人风格写评审意见、修改建议与返修提问。",
@@ -388,7 +388,7 @@ def demo_evaluate(text, filename, model_id):
         "suggestions": [
             u"在绪论与摘要中单独成段论述创新点：校园小目标/逆光增强、跟踪关联策略与热力分析的组合贡献。",
             u"补充消融实验（数据增强、跟踪器、输入尺度）与至少一组 SOTA 对比。",
-            u"按 GB/T 7714-2015 顺序编码制统一参考文献，并核对每条必要字段。",
+            u"按 GB/T 7714—2025 顺序编码制统一参考文献，并核对每条必要字段。",
         ],
         "summary": u"文稿《%s》综合评分 %s / 100，学术规范重合度约 %s%%（用于提示表述规范与原创性，不替代正式查重）。建议优先补强创新点论证、实验对比与参考文献格式。"
         % (filename or topic, score, overlap),
@@ -433,7 +433,7 @@ def demo_outline(topic, text, model_id):
         {u"title": u"Focal Loss for Dense Object Detection", u"meta": u"Lin et al., ICCV 2017", u"why": u"解释小目标/类别不平衡时可引用。"},
         {u"title": u"智慧校园视频监控中的行人感知综述", u"meta": u"国内学报/会议综述，2022–2024", u"why": u"把问题落到校园场景，而不是通用 COCO。"},
         {u"title": u"CrowdHuman / CityPersons 等行人检测基准", u"meta": u"Shao et al.; Zhang et al.", u"why": u"讨论域迁移与自建校园数据的必要性。"},
-        {u"title": u"GB/T 7714-2015 信息与文献 参考文献著录规则", u"meta": u"国家标准", u"why": u"本科论文参考文献格式依据。"},
+        {u"title": u"GB/T 7714—2025 信息与文献 参考文献著录规则", u"meta": u"国家标准", u"why": u"本科论文参考文献格式依据。"},
     ]
     questions = [
         {
@@ -538,19 +538,19 @@ def demo_abstract(text, requirement, model_id):
 
 
 def demo_refs(raw, standard, model_id):
-    standard = standard or u"GB/T 7714-2015 顺序编码制"
+    standard = standard or u"GB/T 7714—2025 顺序编码制"
     items = [
-        u"[1] REDMON J, FARHADI A. YOLOv3: An incremental improvement[EB/OL]. (2018-04-08)[2026-06-01]. https://arxiv.org/abs/1804.02767.",
-        u"[2] ZHANG Y, SUN P, JIANG Y, et al. ByteTrack: Multi-object tracking by associating every detection box[C]//European Conference on Computer Vision. Cham: Springer, 2022: 1-21.",
-        u"[3] WOJKE N, BEWLEY A, PAULUS D. Simple online and realtime tracking with a deep association metric[C]//IEEE International Conference on Image Processing. Piscataway: IEEE, 2017: 3645-3649.",
+        u"[1] Redmon J, Farhadi A. YOLOv3: An incremental improvement[PP/OL]. arXiv (2018-04-08)[2026-06-01]. https://arxiv.org/abs/1804.02767.",
+        u"[2] Zhang Y, Sun P, Jiang Y, et al. ByteTrack: Multi-object tracking by associating every detection box[C]//European Conference on Computer Vision. Cham: Springer, 2022: 1-21.",
+        u"[3] Wojke N, Bewley A, Paulus D. Simple online and realtime tracking with a deep association metric[C]//IEEE International Conference on Image Processing. Piscataway: IEEE, 2017: 3645-3649.",
         u"[4] 王磊. 智慧校园视频监控关键技术研究[D]. 南京: 某大学, 2023.",
-        u"[5] 国家质量监督检验检疫总局, 国家标准化管理委员会. GB/T 7714—2015 信息与文献 参考文献著录规则[S]. 北京: 中国标准出版社, 2015.",
+        u"[5] GB/T 7714—2025 信息与文献 参考文献著录规则[S].",
     ]
     notes = [
-        u"已按顺序编码制重新编号；英文著者姓全大写、名缩写。",
-        u"会议论文补全出版地/出版社信息（示意字段，请用原始题录替换）。",
-        u"学位论文补全出版地；请核实证人姓名与年份。",
-        u"原文中 arXiv 条目缺规范电子资源著录，已按 EB/OL 处理。",
+        u"已按 GB/T 7714—2025 顺序编码制重新编号。",
+        u"西文个人责任者姓仅首字母大写，名缩写为首字母，缩写名后不加下点。",
+        u"arXiv 预印本按 PP/OL 著录。EB 只用于网站、网页，不能再标预印本。",
+        u"标准只著录标准编号和标准名称，不写发布机构和出版社。",
     ]
     extra = []
     for line in (raw or "").splitlines():
@@ -603,7 +603,7 @@ def demo_submit(guide, text, filename, model_id):
         "format": [
             u"摘要独立成页，中英文摘要与关键词对应；英文关键词实词首字母大写。",
             u"正文用宋体小四、1.5 倍行距（以学校模板为准），图题表题编号连续。",
-            u"参考文献严格 GB/T 7714-2015 顺序编码制，文内引用与文末编号一一对应。",
+            u"参考文献严格 GB/T 7714—2025 顺序编码制，文内引用与文末编号一一对应。",
         ],
         "focus": [
             u"学位要求通常强调问题来源、工作量与可复现实验，需把自建数据规模写清楚。",
@@ -703,7 +703,7 @@ def demo_retrospect(records, model_id):
 def demo_pipeline(text, filename, model_id):
     ev = demo_evaluate(text, filename, model_id)
     pol = demo_polish(text, filename, model_id)
-    refs = demo_refs(text, u"GB/T 7714-2015 顺序编码制", model_id)
+    refs = demo_refs(text, u"GB/T 7714—2025 顺序编码制", model_id)
     out = demo_outline(_guess_topic(text, filename), text, model_id)
     return {
         "mode": "demo",
@@ -791,7 +791,7 @@ def run_module(action, payload):
         % (extra.get("chapter") or "", extra.get("answer") or "", _clip(text, 2500)),
         "polish": u"文件：%s\n%s" % (filename, _clip(text)),
         "abstract": u"要求：%s\n正文：\n%s" % (extra.get("requirement") or u"本科毕业论文摘要", _clip(text)),
-        "refs": u"标准：%s\n条目：\n%s" % (extra.get("standard") or u"GB/T 7714-2015 顺序编码制", _clip(text, 4000)),
+        "refs": u"标准：%s\n条目：\n%s" % (extra.get("standard") or u"GB/T 7714—2025 顺序编码制", _clip(text, 4000)),
         "path": u"专业：%s\n技能：%s\n兴趣：%s\n作业：\n%s"
         % (extra.get("major"), extra.get("skills"), extra.get("interest"), _clip(text, 2500)),
         "submit": u"规范：\n%s\n论文：\n%s" % (_clip(extra.get("guide") or "", 2500), _clip(text)),
