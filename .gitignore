@@ -3,6 +3,10 @@ venv/
 __pycache__/
 *.pyc
 .env
+密钥配置-本地私密.txt
+密钥*.txt
+*私密*
+secrets/
 data/uploads/*
 data/history/*
 !data/uploads/.gitkeep
