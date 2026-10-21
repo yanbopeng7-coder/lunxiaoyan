@@ -325,7 +325,12 @@ def call_llm(model_id, system, user, history=None):
             extra_body=extra,
         )
         return text, False
-    except Exception:
+    except Exception as e:
+        try:
+            with open(os.path.join(os.path.dirname(__file__), "data", "llm_error.log"), "a", encoding="utf-8") as f:
+                f.write("%s | %s | %s\n" % (model_id, type(e).__name__, e))
+        except Exception:
+            pass
         return None, True
 
 
