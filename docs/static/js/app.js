@@ -32,7 +32,7 @@
     return location.protocol === "file:" || /github\.io$/i.test(h);
   }
   // GitHub Pages 不能直连智谱（CORS）。优先走公网 API（Flask/隧道/Worker），评委无需填密钥。
-  var PUBLIC_API_BASE = (window.LX_API_BASE || "https://cottage-dictionaries-boulder-places.trycloudflare.com").replace(/\/$/, "");
+  var PUBLIC_API_BASE = (window.LX_API_BASE || "https://operates-incoming-yield-crew.trycloudflare.com").replace(/\/$/, "");
   function apiBase() {
     if (!isStaticHost()) return "";
     return PUBLIC_API_BASE;
