@@ -118,6 +118,74 @@ def demo_file(name):
     return send_from_directory(DEMO_DIR, name, as_attachment=True)
 
 
+@app.route("/api/arxiv")
+def api_arxiv():
+    """代理 arXiv Atom API，供 Pages/浏览器检索（规避 CORS）。"""
+    import re
+    import xml.etree.ElementTree as ET
+
+    import requests as _req
+
+    q = (request.args.get("q") or "").strip()
+    max_results = min(int(request.args.get("max") or 8), 20)
+    if not q:
+        return _json({"ok": False, "error": u"缺少 q", "items": []}, 400)
+    # 若像 arXiv id
+    if re.match(r"^\d{4}\.\d{4,5}(v\d+)?$", q):
+        url = "http://export.arxiv.org/api/query?id_list=%s" % q
+    else:
+        from urllib.parse import quote
+
+        url = (
+            "http://export.arxiv.org/api/query?search_query=all:%s&start=0&max_results=%s"
+            % (quote(q), max_results)
+        )
+    try:
+        resp = _req.get(url, timeout=25)
+        resp.raise_for_status()
+        root = ET.fromstring(resp.content)
+        ns = {"a": "http://www.w3.org/2005/Atom"}
+        items = []
+        for entry in root.findall("a:entry", ns):
+            title = (entry.findtext("a:title", default="", namespaces=ns) or "").strip()
+            summary = (entry.findtext("a:summary", default="", namespaces=ns) or "").strip()
+            published = (entry.findtext("a:published", default="", namespaces=ns) or "")[:10]
+            authors = [
+                (a.findtext("a:name", default="", namespaces=ns) or "")
+                for a in entry.findall("a:author", ns)
+            ]
+            aid = ""
+            pdf = ""
+            github = ""
+            for link in entry.findall("a:link", ns):
+                href = link.attrib.get("href") or ""
+                if link.attrib.get("type") == "application/pdf" or link.attrib.get("title") == "pdf":
+                    pdf = href
+                if "arxiv.org/abs/" in href:
+                    aid = href.rstrip("/").split("/")[-1]
+            if not aid:
+                id_full = entry.findtext("a:id", default="", namespaces=ns) or ""
+                aid = id_full.rstrip("/").split("/")[-1]
+            # 简易 GitHub 启发：摘要中的链接
+            gm = re.search(r"https?://github\.com/[^\s)]+", summary)
+            if gm:
+                github = gm.group(0)
+            items.append(
+                {
+                    "id": aid,
+                    "title": re.sub(r"\s+", " ", title),
+                    "authors": ", ".join([a for a in authors if a][:6]),
+                    "summary": re.sub(r"\s+", " ", summary)[:1200],
+                    "published": published,
+                    "pdf": pdf or ("https://arxiv.org/pdf/%s" % aid if aid else ""),
+                    "github": github,
+                }
+            )
+        return _json({"ok": True, "items": items, "source": "arxiv"})
+    except Exception as e:
+        return _json({"ok": False, "error": str(e), "items": []}, 502)
+
+
 @app.route("/api/parse", methods=["POST"])
 def api_parse():
     f = request.files.get("file")
