@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=23" />
+  <link rel="stylesheet" href="static/css/style.css?v=34" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -80,6 +80,9 @@
         <label class="nav-item"><input type="radio" name="nav" value="translate" onclick="go('translate')" /> 中英学术翻译</label>
         <label class="nav-item"><input type="radio" name="nav" value="diff" onclick="go('diff')" /> 两稿对照</label>
         <label class="nav-item"><input type="radio" name="nav" value="retrospect" onclick="go('retrospect')" /> 论文写作复盘</label>
+        <label class="nav-item"><input type="radio" name="nav" value="framework" onclick="go('framework')" /> 无幻觉论文框架</label>
+        <label class="nav-item"><input type="radio" name="nav" value="diagram" onclick="go('diagram')" /> 架构拓扑图</label>
+        <label class="nav-item"><input type="radio" name="nav" value="csvviz" onclick="go('csvviz')" /> CSV 数据可视化</label>
       </div>
       <div class="h">规范与实验</div>
       <div class="nav-group">
@@ -121,6 +124,11 @@
           <div class="scard c4 feat" onclick="go('polish')"><b>初稿润色分析</b><span>语言润色、逻辑梳理、学术表达优化</span></div>
           <div class="scard c5 feat" onclick="go('refs')"><b>参考文献整理</b><span>批量格式化、国标输出、引用校验</span></div>
           <div class="scard c1 feat" onclick="go('chat')"><b>智能论文助手</b><span>场景化问答、多轮对话、导出记录</span></div>
+        </div>
+        <div class="cards3">
+          <div class="scard c2 feat" onclick="go('framework')"><b>无幻觉论文框架</b><span>只用你提供的文献生成 Abstract–Related Work</span></div>
+          <div class="scard c3 feat" onclick="go('diagram')"><b>架构拓扑图</b><span>Mermaid / Graphviz / TikZ / Matplotlib</span></div>
+          <div class="scard c4 feat" onclick="go('csvviz')"><b>CSV 数据可视化</b><span>折线/柱状/雷达图 + 学术图注 + LaTeX 表</span></div>
         </div>
         <div class="card">
           <b>核心亮点：一键论文全流程辅助</b>
@@ -306,6 +314,44 @@
           <div class="report" id="translateOut"></div>
         </div>
       </section>
+      <section class="page" id="page-framework">
+        <div class="hero"><h1>无幻觉论文框架</h1><p>Abstract / Introduction / Related Work；参考文献只使用你粘贴的条目，绝不编造</p></div>
+        <div class="card">
+          <label>研究 idea</label>
+          <textarea id="fwIdea" placeholder="例如：校园监控中的小目标行人检测与遮挡跟踪"></textarea>
+          <label style="margin-top:10px;display:block">真实文献条目（每行一条，可含作者/年份/题名）</label>
+          <textarea id="fwPapers" placeholder="Vaswani et al. Attention Is All You Need. NeurIPS, 2017.&#10;Redmon J, Farhadi A. YOLOv3: An Incremental Improvement. arXiv, 2018."></textarea>
+          <button class="btn" type="button" onclick="runFramework()">生成无幻觉框架</button>
+          <div class="report" id="fwOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-diagram">
+        <div class="hero"><h1>架构拓扑图</h1><p>根据 idea 生成系统架构，并导出 Mermaid / DOT / TikZ / Matplotlib</p></div>
+        <div class="card">
+          <textarea id="diagIdea" placeholder="描述方法流程，例如：YOLOv8 检测 → ByteTrack 跟踪 → 轨迹热力与越界分析"></textarea>
+          <button class="btn" type="button" onclick="runDiagram()">生成架构图与脚本</button>
+          <div class="report" id="diagOut"></div>
+        </div>
+      </section>
+      <section class="page" id="page-csvviz">
+        <div class="hero"><h1>CSV 数据可视化 Copilot</h1><p>上传实验 CSV → 学术图表 + Figure Caption + Matplotlib / booktabs</p></div>
+        <div class="card">
+          <div class="drop">拖拽 / 点击上传 CSV<input id="csvFile" type="file" accept=".csv,text/csv" /></div>
+          <textarea id="csvRaw" placeholder="或直接粘贴 CSV 文本" style="min-height:140px;margin-top:10px"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
+            <select id="csvChartType">
+              <option value="auto">自动选型</option>
+              <option value="line">折线图</option>
+              <option value="bar">柱状图</option>
+              <option value="scatter">散点图</option>
+              <option value="radar">雷达图</option>
+            </select>
+            <button class="btn ghost" type="button" onclick="loadCsvDemo()">载入演示 CSV</button>
+            <button class="btn" type="button" onclick="runCsvViz()">生成图表与图注</button>
+          </div>
+          <div class="report" id="csvOut"></div>
+        </div>
+      </section>
       <section class="page" id="page-diff">
         <div class="hero"><h1>两稿对照</h1><p>进步点与未改的高优先级项</p></div>
         <div class="card">
@@ -426,7 +472,8 @@
   <script src="static/vendor/fflate.min.js?v=23"></script>
   <script src="static/vendor/pdf.min.js?v=23"></script>
   <script src="static/js/readfile.js?v=23"></script>
-  <script src="static/js/pages-demo.js?v=33"></script>
-  <script src="static/js/app.js?v=33"></script>
+  <script src="static/js/pages-demo.js?v=34"></script>
+  <script src="static/js/app.js?v=34"></script>
+  <script type="module" src="static/js/copilot-ui.js?v=34"></script>
 </body>
 </html>
