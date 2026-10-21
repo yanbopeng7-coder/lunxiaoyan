@@ -150,6 +150,42 @@ def api_run():
     return _json(result)
 
 
+@app.route("/api/llm", methods=["POST"])
+def api_llm():
+    """OpenAI 兼容代理：给 GitHub Pages 绕过智谱 CORS，密钥只用服务端 .env。"""
+    import requests as _req
+
+    body = request.get_json(silent=True) or {}
+    key = (
+        os.environ.get("ZHIPU_API_KEY")
+        or (request.headers.get("Authorization") or "").replace("Bearer", "").strip()
+    )
+    if not key:
+        return _json({"error": {"message": "missing api key"}}, 401)
+    model = body.get("model") or "glm-4-flash"
+    # 硅基 / Groq 也可按 model 前缀分流；默认智谱
+    url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+    groq_key = os.environ.get("GROQ_API_KEY")
+    if str(model).startswith("openai/") or str(model).startswith("qwen/"):
+        if groq_key:
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            key = groq_key
+    try:
+        upstream = _req.post(
+            url,
+            headers={"Authorization": "Bearer " + key, "Content-Type": "application/json"},
+            json=body,
+            timeout=90,
+        )
+        return Response(
+            upstream.content,
+            status=upstream.status_code,
+            mimetype="application/json; charset=utf-8",
+        )
+    except Exception as e:
+        return _json({"error": {"message": str(e)}}, 502)
+
+
 @app.route("/api/history", methods=["GET", "POST", "DELETE"])
 def api_history():
     path = os.path.join(HISTORY_DIR, "history.json")
