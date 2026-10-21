@@ -31,6 +31,12 @@
     var h = location.hostname || "";
     return location.protocol === "file:" || /github\.io$/i.test(h);
   }
+  // GitHub Pages 不能直连智谱（CORS）。优先走公网 API（Flask/隧道/Worker），评委无需填密钥。
+  var PUBLIC_API_BASE = (window.LX_API_BASE || "https://cottage-dictionaries-boulder-places.trycloudflare.com").replace(/\/$/, "");
+  function apiBase() {
+    if (!isStaticHost()) return "";
+    return PUBLIC_API_BASE;
+  }
   var BUILTIN_KEYS = {
     zhipu: "ae254bc152dc43518f5c7ced8ea29de4.MgFXogJxxLuisNcB",
     groq: "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"
@@ -147,44 +153,57 @@
   }
   function api(action, extra, text, filename) {
     loading(true);
-    if (isStaticHost()) {
-      var spec = currentSpec();
-      if (!keyFor(spec)) {
+    var base = apiBase();
+    // 本地 Flask，或 Pages 上的公网 API（隧道/Worker），密钥在服务端，评委直接用
+    if (!isStaticHost() || base) {
+      return fetch((base || "") + "/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: action,
+          model: modelId(),
+          text: text || "",
+          filename: filename || "",
+          extra: extra || {}
+        })
+      }).then(function (r) { return r.json(); }).then(function (d) {
         loading(false);
-        toast(spec.provider === "silicon" ? "通义千问 2.5 和 3.5 还要硅基流动密钥" : "先配置对应模型的密钥");
-        return Promise.resolve(localResult(action, extra, text, filename));
-      }
-      return callLive(action, extra, text, filename).then(function (d) {
-        loading(false);
+        if (!d || d.ok === false) throw new Error((d && d.error) || "失败");
         return d;
       }).catch(function (e) {
-        loading(false);
-        // GitHub Pages 直连大模型会被浏览器 CORS 拦住；回退本地完整演示，保证评委仍能点出结果
-        var msg = (e && e.message) || "";
-        if (/Failed to fetch|NetworkError|CORS|Load failed/i.test(msg)) {
-          toast("浏览器拦了在线模型，已切换本地完整演示");
-        } else {
-          toast((msg || "模型请求失败") + "，已切换本地演示");
+        if (isStaticHost()) {
+          // 公网 API 不可用时再尝试浏览器直连；仍失败则本地完整演示
+          var spec = currentSpec();
+          if (keyFor(spec)) {
+            return callLive(action, extra, text, filename).then(function (d) {
+              loading(false);
+              return d;
+            }).catch(function () {
+              loading(false);
+              toast("在线服务暂不可用，已切换本地完整演示");
+              return localResult(action, extra, text, filename);
+            });
+          }
+          loading(false);
+          toast("在线服务暂不可用，已切换本地完整演示");
+          return localResult(action, extra, text, filename);
         }
+        loading(false);
         return localResult(action, extra, text, filename);
       });
     }
-    return fetch("/api/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: action,
-        model: modelId(),
-        text: text || "",
-        filename: filename || "",
-        extra: extra || {}
-      })
-    }).then(function (r) { return r.json(); }).then(function (d) {
+    var spec = currentSpec();
+    if (!keyFor(spec)) {
       loading(false);
-      if (!d || d.ok === false) throw new Error((d && d.error) || "失败");
+      toast(spec.provider === "silicon" ? "通义千问 2.5 和 3.5 还要硅基流动密钥" : "先配置对应模型的密钥");
+      return Promise.resolve(localResult(action, extra, text, filename));
+    }
+    return callLive(action, extra, text, filename).then(function (d) {
+      loading(false);
       return d;
-    }).catch(function () {
+    }).catch(function (e) {
       loading(false);
+      toast((((e && e.message) || "模型请求失败")) + "，已切换本地演示");
       return localResult(action, extra, text, filename);
     });
   }

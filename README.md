@@ -32,17 +32,19 @@ GitHub Pages 只能托管静态网页，不能跑 Flask。本仓库已按[官方
 d:\py\Anaconda3\python.exe build_pages.py
 ```
 
-站点地址形如：`https://<你的用户名>.github.io/lunxiaoyan/`
+站点地址形如：`https://yanbopeng7-coder.github.io/lunxiaoyan/`
 
-网页版可直接点功能、载入演示用例；docx/pdf 解析仍需本地 `启动论小研.bat`。`.env` 不会上传。
+评委打开 GitHub Pages 即可直接在线生成（不填密钥）。静态页会请求公网 API（本机 Flask + 隧道 / Cloudflare Worker），密钥只在服务端。本机需保持 `start_public_api.bat` 或已部署的 Worker 在线；若公网 API 暂不可用，会自动回退完整本地演示。
+
+docx/pdf 深度解析仍推荐本地 `启动论小研.bat`。`.env` 不会上传。
 
 ## 可选模型
 
 默认：**智谱清言 4-Flash**。下拉里每一项都请求对应模型，互不混用。
 
-通义千问 3.8-27B 和 GPT-OSS 120B 走 Groq。网页版已带上智谱和 Groq 的调用密钥，评委打开链接即可直接请求这两个平台。硅基流动的两个通义小模型和魔搭仍要各自账号可用后才能调用。
+通义千问 3.8-27B 和 GPT-OSS 120B 走 Groq。Pages 评委走服务端密钥，界面不显示密钥框。硅基流动的两个通义小模型仍要各自账号可用后才能调用。
 
-网页版里智谱和硅基流动的密钥只存在这台浏览器里。本地 `启动论小研.bat` 读取 `.env` 里的 `ZHIPU_API_KEY`、`SILICONFLOW_API_KEY` 和 `GROQ_API_KEY`。
+本地 `启动论小研.bat` 读取 `.env` 里的 `ZHIPU_API_KEY`、`SILICONFLOW_API_KEY` 和 `GROQ_API_KEY`。
 
 将 `.env.example` 复制为 `.env` 后填写对应密钥：
 

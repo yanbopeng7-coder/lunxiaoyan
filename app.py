@@ -53,11 +53,36 @@ app.jinja_env.auto_reload = True
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 
 
+def _cors_origin():
+    origin = request.headers.get("Origin") or ""
+    if origin in (
+        "https://yanbopeng7-coder.github.io",
+        "http://127.0.0.1:8080",
+        "http://localhost:8080",
+    ):
+        return origin
+    if origin.endswith(".github.io"):
+        return origin
+    return ""
+
+
 @app.after_request
 def _no_cache(resp):
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     resp.headers["Pragma"] = "no-cache"
+    allow = _cors_origin()
+    if allow:
+        resp.headers["Access-Control-Allow-Origin"] = allow
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
+        resp.headers["Vary"] = "Origin"
     return resp
+
+
+@app.route("/api/<path:_any>", methods=["OPTIONS"])
+@app.route("/api", methods=["OPTIONS"])
+def api_options(_any=None):
+    return Response("", status=204)
 
 
 def _json(data, code=200):
