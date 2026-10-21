@@ -7,7 +7,10 @@ import {
   loadDemoPair, renderPaperCard, structureReportHtml, getPaper, findDuplicates,
 } from './lab/library.js';
 import { answerQuestion, comparePapers, evidenceListHtml } from './lab/rag.js';
-import { renderReader, bindReaderInteractions, jumpToCite } from './lab/reader.js';
+import {
+  renderReader, bindReaderInteractions, jumpToCite,
+  fillPendingWithModel, renderZhColumn,
+} from './lab/reader.js';
 import {
   searchArxiv, filterQuality, drillDownRefs, recommendFromLibrary,
   itemToPaperDraft, renderSearchResults, refLineToQuery,
@@ -209,6 +212,8 @@ function bindCiteClicks(root) {
   });
 }
 
+window._readerParas = null;
+
 window.openReader = async function (id) {
   const papers = await listPapers();
   const pid = id || ($('readerSelect') && $('readerSelect').value) || window.LX_CURRENT_PAPER;
@@ -216,9 +221,40 @@ window.openReader = async function (id) {
   if (!paper) { setHtml('readerRoot', '<p class="muted">请先入库文献</p>'); return; }
   if ($('readerSelect')) $('readerSelect').value = paper.id;
   const view = renderReader(paper);
+  window._readerParas = view.paras;
   setHtml('readerRoot', view.html);
   bindReaderInteractions($('readerRoot'));
   toast('阅读器已打开：' + paper.title.slice(0, 40));
+};
+
+window.polishReaderZh = async function () {
+  if (!window._readerParas || !window._readerParas.length) {
+    toast('请先打开阅读器');
+    return;
+  }
+  toast('正在补全中文对照…');
+  const apiRun = async (body) => {
+    if (typeof window.api === 'function') {
+      return window.api(body.action, body.extra || {}, body.text, body.filename);
+    }
+    const base = (window.LX_API_BASE || '').replace(/\/$/, '');
+    const r = await fetch((base || '') + '/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ model: 'glm-4-flash' }, body)),
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  };
+  try {
+    await fillPendingWithModel(window._readerParas, apiRun);
+    const zh = document.querySelector('#scrollZh');
+    if (zh) zh.innerHTML = renderZhColumn(window._readerParas);
+    bindReaderInteractions($('readerRoot'));
+    toast('中文对照已更新');
+  } catch (e) {
+    toast('模型翻译暂不可用，已保留离线整句译文：' + (e.message || e));
+  }
 };
 
 window.runArxivSearch = async function () {
