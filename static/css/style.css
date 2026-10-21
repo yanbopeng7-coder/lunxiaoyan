@@ -153,6 +153,9 @@ select, input[type="text"], input[type="password"], textarea, .field {
 .example div { background: #f8fafc; border-radius: 10px; padding: 10px; font-size: 13px; line-height: 1.6; }
 .feat { cursor: pointer; }
 .feat:hover { border-color: var(--blue); }
+.viz-svg { overflow: auto; margin: 12px 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+.viz-svg svg { max-width: 100%; height: auto; display: block; }
+[data-theme="dark"] .viz-svg { background: #0f172a; }
 @media (max-width: 900px) {
   .app { grid-template-columns: 1fr; }
   .sidebar { position: relative; height: auto; }
