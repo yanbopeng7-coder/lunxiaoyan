@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=34" />
+  <link rel="stylesheet" href="static/css/style.css?v=35" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -54,6 +54,14 @@
       </select>
       <label class="check"><input type="checkbox" id="darkBox" /> 暗黑模式</label>
 
+      <div class="h">科研 Agent</div>
+      <div class="nav-group">
+        <label class="nav-item"><input type="radio" name="nav" value="library" onclick="go('library')" /> 文献库解析</label>
+        <label class="nav-item"><input type="radio" name="nav" value="rag" onclick="go('rag')" /> 抗幻觉问答</label>
+        <label class="nav-item"><input type="radio" name="nav" value="reader" onclick="go('reader')" /> 沉浸阅读翻译</label>
+        <label class="nav-item"><input type="radio" name="nav" value="retrieve" onclick="go('retrieve')" /> 检索追踪推荐</label>
+        <label class="nav-item"><input type="radio" name="nav" value="graph" onclick="go('graph')" /> 引用图谱综述</label>
+      </div>
       <div class="h">基础功能</div>
       <div class="nav-group">
         <label class="nav-item"><input type="radio" name="nav" value="home" checked onclick="go('home')" /> 首页</label>
@@ -130,6 +138,17 @@
           <div class="scard c3 feat" onclick="go('diagram')"><b>架构拓扑图</b><span>Mermaid / Graphviz / TikZ / Matplotlib</span></div>
           <div class="scard c4 feat" onclick="go('csvviz')"><b>CSV 数据可视化</b><span>折线/柱状/雷达图 + 学术图注 + LaTeX 表</span></div>
         </div>
+        <div class="section-head"><h2>科研 Agent 六大模块</h2><p>文献解析 · 抗幻觉 RAG · 双向阅读 · 检索推荐 · 引用图谱 · 写作可视化</p></div>
+        <div class="cards3">
+          <div class="scard c1 feat" onclick="go('library')"><b>文献库解析</b><span>CRUD · Attention v1/v7 语义去重 · 标题树/公式/参考文献</span></div>
+          <div class="scard c2 feat" onclick="go('rag')"><b>抗幻觉问答</b><span>BM25 检索 · 原文锚点 · 多文对比拒编造</span></div>
+          <div class="scard c3 feat" onclick="go('reader')"><b>沉浸阅读</b><span>[n]↔Refs 跳转 · 中英对照联动滚动</span></div>
+        </div>
+        <div class="cards3">
+          <div class="scard c4 feat" onclick="go('retrieve')"><b>检索推荐</b><span>arXiv 代理 · 参考文献下钻 · GitHub 优先</span></div>
+          <div class="scard c5 feat" onclick="go('graph')"><b>引用图谱</b><span>PageRank 基石节点 · 综述 · Future Work 挖掘</span></div>
+          <div class="scard c1 feat" onclick="go('csvviz')"><b>写作 Copilot</b><span>CSV 图注 · Mermaid/TikZ · 无幻觉框架</span></div>
+        </div>
         <div class="card">
           <b>核心亮点：一键论文全流程辅助</b>
           <p style="color:var(--muted);font-size:13.5px">上传初稿后自动：内容评估 → 大纲优化 → 语言润色 → 参考文献整理 → 完整优化报告。演示用例《计算机专业本科毕业论文初稿.docx》。</p>
@@ -138,6 +157,70 @@
           <button class="btn ghost" type="button" onclick="loadDemo('pipeline')">载入演示用例</button>
           <button class="btn gold" type="button" onclick="runPipe()">一键启动全流程</button>
           <div id="pipeResult"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-library">
+        <div class="hero"><h1>文献库 · PDF 解析与语义去重</h1><p>模块一：CRUD · SimHash/MinHash 去重 · 细粒度结构抽取</p></div>
+        <div class="card">
+          <div class="row">
+            <button class="btn gold" type="button" onclick="loadAttentionDemo()">一键 Attention v1→v7 去重测例</button>
+            <input type="file" id="libFile" accept=".pdf,.txt,.md" />
+            <button class="btn" type="button" onclick="ingestLibFile()">上传入库</button>
+          </div>
+          <textarea id="libPaste" rows="5" placeholder="或粘贴论文纯文本（含 Title/Abstract/References）"></textarea>
+          <button class="btn ghost" type="button" onclick="ingestLibPaste()">粘贴入库</button>
+          <div id="libList"></div>
+          <div class="report" id="libDetail"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-rag">
+        <div class="hero"><h1>抗幻觉知识问答</h1><p>模块二：RAG 溯源锚点 · 多文对比 · 证据不足拒答</p></div>
+        <div class="card">
+          <div class="pick-list" id="ragPickList"></div>
+          <textarea id="ragQuestion" rows="3" placeholder="例：Adam 的 β1/β2？训练用了几块 P100？WMT En-De BLEU？"></textarea>
+          <div class="row">
+            <button class="btn" type="button" onclick="runRagAsk()">带出处回答</button>
+            <button class="btn ghost" type="button" onclick="runRagCompare()">多文对比</button>
+          </div>
+          <div class="report" id="ragOut"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-reader">
+        <div class="hero"><h1>沉浸式阅读与双向翻译</h1><p>模块三：标题树 · [n]↔References · 中英联动滚动</p></div>
+        <div class="card">
+          <div class="row">
+            <select id="readerSelect"></select>
+            <button class="btn" type="button" onclick="openReader()">打开阅读器</button>
+          </div>
+          <div id="readerRoot"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-retrieve">
+        <div class="hero"><h1>论文检索 · 追踪 · 推荐</h1><p>模块四：arXiv API · 参考文献下钻 · GitHub 优先推荐</p></div>
+        <div class="card">
+          <div class="row">
+            <input id="arxivQ" type="text" placeholder="检索词或 arXiv id，如 transformer / 1706.03762" style="flex:1;min-width:200px" />
+            <button class="btn" type="button" onclick="runArxivSearch()">检索</button>
+            <button class="btn ghost" type="button" onclick="runRecommend()">基于本地库推荐</button>
+          </div>
+          <textarea id="refDrill" rows="4" placeholder="粘贴参考文献列表，逐条下钻下载元数据"></textarea>
+          <button class="btn ghost" type="button" onclick="runRefDrill()">参考文献下钻</button>
+          <div id="arxivOut"></div>
+        </div>
+      </section>
+
+      <section class="page" id="page-graph">
+        <div class="hero"><h1>局域引用图谱与综述</h1><p>模块五：PageRank 基石节点 · 自动综述 · Future Work 去旧提新</p></div>
+        <div class="card">
+          <div class="row">
+            <button class="btn gold" type="button" onclick="loadGraphDemo()">载入 16 篇演示语料</button>
+            <button class="btn" type="button" onclick="runGraph()">生成图谱与综述</button>
+          </div>
+          <div id="graphOut"></div>
         </div>
       </section>
 
@@ -472,8 +555,9 @@
   <script src="static/vendor/fflate.min.js?v=23"></script>
   <script src="static/vendor/pdf.min.js?v=23"></script>
   <script src="static/js/readfile.js?v=23"></script>
-  <script src="static/js/pages-demo.js?v=34"></script>
-  <script src="static/js/app.js?v=34"></script>
-  <script type="module" src="static/js/copilot-ui.js?v=34"></script>
+  <script src="static/js/pages-demo.js?v=35"></script>
+  <script src="static/js/app.js?v=35"></script>
+  <script type="module" src="static/js/copilot-ui.js?v=35"></script>
+  <script type="module" src="static/js/agent-ui.js?v=35"></script>
 </body>
 </html>
