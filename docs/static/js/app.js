@@ -31,11 +31,34 @@
     var h = location.hostname || "";
     return location.protocol === "file:" || /github\.io$/i.test(h);
   }
-  // GitHub Pages 不能直连智谱（CORS）。优先走公网 API（Flask/隧道/Worker），评委无需填密钥。
-  var PUBLIC_API_BASE = (window.LX_API_BASE || "https://operates-incoming-yield-crew.trycloudflare.com").replace(/\/$/, "");
+  // GitHub Pages 不能直连智谱（CORS）。走公网 Flask API（隧道），密钥在服务端，评委免填。
+  var PUBLIC_API_BASE = (window.LX_API_BASE || "https://sheffield-jersey-railway-least.trycloudflare.com").replace(/\/$/, "");
+  var _apiBaseReady = null;
   function apiBase() {
     if (!isStaticHost()) return "";
     return PUBLIC_API_BASE;
+  }
+  function ensureApiBase() {
+    if (!isStaticHost()) return Promise.resolve("");
+    if (_apiBaseReady) return _apiBaseReady;
+    var candidates = [];
+    if (window.LX_API_BASE) candidates.push(String(window.LX_API_BASE).replace(/\/$/, ""));
+    candidates.push(PUBLIC_API_BASE);
+    _apiBaseReady = (function next(i) {
+      if (i >= candidates.length) return Promise.resolve(PUBLIC_API_BASE);
+      var b = candidates[i];
+      return fetch(b + "/api/health", { method: "GET" })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d, b: b }; }); })
+        .then(function (pack) {
+          if (pack.ok && pack.d && pack.d.ok !== false) {
+            PUBLIC_API_BASE = pack.b;
+            return pack.b;
+          }
+          return next(i + 1);
+        })
+        .catch(function () { return next(i + 1); });
+    })(0);
+    return _apiBaseReady;
   }
   var BUILTIN_KEYS = {
     zhipu: "ae254bc152dc43518f5c7ced8ea29de4.MgFXogJxxLuisNcB",
@@ -124,12 +147,15 @@
     };
     if (spec.thinking && spec.provider === "zhipu") body.thinking = { type: "disabled" };
     if (spec.thinking && spec.provider === "silicon") body.enable_thinking = false;
-    return fetch(LIVE_URLS[spec.provider], {
+    // Pages 走同源公网代理，避免浏览器直连智谱被 CORS 拦截
+    var liveUrl = (isStaticHost() && PUBLIC_API_BASE) ? (PUBLIC_API_BASE + "/api/llm") : LIVE_URLS[spec.provider];
+    var headers = { "Content-Type": "application/json" };
+    if (!isStaticHost() || !PUBLIC_API_BASE) {
+      headers.Authorization = "Bearer " + keyFor(spec);
+    }
+    return fetch(liveUrl, {
       method: "POST",
-      headers: {
-        "Authorization": "Bearer " + keyFor(spec),
-        "Content-Type": "application/json"
-      },
+      headers: headers,
       body: JSON.stringify(body)
     }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); }).then(function (pack) {
       if (!pack.ok) {
@@ -153,9 +179,7 @@
   }
   function api(action, extra, text, filename) {
     loading(true);
-    var base = apiBase();
-    // 本地 Flask，或 Pages 上的公网 API（隧道/Worker），密钥在服务端，评委直接用
-    if (!isStaticHost() || base) {
+    function runOnBase(base) {
       return fetch((base || "") + "/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -167,44 +191,42 @@
           extra: extra || {}
         })
       }).then(function (r) { return r.json(); }).then(function (d) {
-        loading(false);
         if (!d || d.ok === false) throw new Error((d && d.error) || "失败");
+        // 服务端若掉进演示，当作失败，让评委侧再试直连/本地完整包
+        if (isStaticHost() && d.demo === true) throw new Error("upstream-demo");
         return d;
-      }).catch(function (e) {
-        if (isStaticHost()) {
-          // 公网 API 不可用时再尝试浏览器直连；仍失败则本地完整演示
-          var spec = currentSpec();
-          if (keyFor(spec)) {
-            return callLive(action, extra, text, filename).then(function (d) {
-              loading(false);
-              return d;
-            }).catch(function () {
-              loading(false);
-              toast("在线服务暂不可用，已切换本地完整演示");
-              return localResult(action, extra, text, filename);
-            });
-          }
-          loading(false);
-          toast("在线服务暂不可用，已切换本地完整演示");
-          return localResult(action, extra, text, filename);
-        }
+      });
+    }
+    // 本地 Flask，或 Pages 上的公网 API，密钥在服务端
+    if (!isStaticHost()) {
+      return runOnBase("").then(function (d) {
+        loading(false);
+        return d;
+      }).catch(function () {
         loading(false);
         return localResult(action, extra, text, filename);
       });
     }
-    var spec = currentSpec();
-    if (!keyFor(spec)) {
-      loading(false);
-      toast(spec.provider === "silicon" ? "通义千问 2.5 和 3.5 还要硅基流动密钥" : "先配置对应模型的密钥");
-      return Promise.resolve(localResult(action, extra, text, filename));
-    }
-    return callLive(action, extra, text, filename).then(function (d) {
-      loading(false);
-      return d;
-    }).catch(function (e) {
-      loading(false);
-      toast((((e && e.message) || "模型请求失败")) + "，已切换本地演示");
-      return localResult(action, extra, text, filename);
+    return ensureApiBase().then(function (base) {
+      return runOnBase(base).then(function (d) {
+        loading(false);
+        return d;
+      }).catch(function () {
+        var spec = currentSpec();
+        if (keyFor(spec)) {
+          return callLive(action, extra, text, filename).then(function (d) {
+            loading(false);
+            return d;
+          }).catch(function () {
+            loading(false);
+            toast("在线模型暂时连不上，已用完整本地结果");
+            return localResult(action, extra, text, filename);
+          });
+        }
+        loading(false);
+        toast("在线模型暂时连不上，已用完整本地结果");
+        return localResult(action, extra, text, filename);
+      });
     });
   }
   function fileOf(key) { return files[key] || {}; }
