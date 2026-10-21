@@ -145,7 +145,7 @@ SYSTEM_PROMPTS = {
     "submit": "你是投稿顾问。对照期刊/学位规范与论文初稿，给出格式、内容侧重、结构优化建议。",
     "reviewer": "你按指定审稿人风格写评审意见、修改建议与返修提问。",
     "retrospect": "你对照多份历史评估/润色记录，总结进步点、遗留问题与后续优化优先级。",
-    "pipeline": "你对论文执行全流程：评估、大纲优化、润色要点、参考文献问题，输出完整优化报告。",
+    "pipeline": "你对论文做快速全流程体检。只输出精炼中文报告，总分控制在 600 字内：综合分、3条优点、3条不足、大纲调整要点、润色要点、文献问题、下一步3条。不要长篇展开。",
 }
 SYSTEM_PROMPTS.update(EXTRA_PROMPTS)
 
@@ -157,7 +157,7 @@ def model_name(model_id):
     return u"智谱清言 4-Flash（最快，推荐）"
 
 
-def _clip(text, n=6000):
+def _clip(text, n=2200):
     text = text or ""
     if len(text) <= n:
         return text
@@ -247,7 +247,7 @@ def _strip_think(text):
     return text.strip()
 
 
-def _openai_chat(url, api_key, model, messages, extra_headers=None, extra_body=None):
+def _openai_chat(url, api_key, model, messages, extra_headers=None, extra_body=None, max_tokens=1024):
     headers = {
         "Authorization": "Bearer " + api_key,
         "Content-Type": "application/json",
@@ -257,12 +257,13 @@ def _openai_chat(url, api_key, model, messages, extra_headers=None, extra_body=N
     payload = {
         "model": model,
         "messages": messages,
-        "temperature": 0.4,
-        "max_tokens": 2048,
+        "temperature": 0.3,
+        "max_tokens": max_tokens,
     }
     if extra_body:
         payload.update(extra_body)
-    resp = requests.post(url, headers=headers, json=payload, timeout=90)
+    # 不走系统代理，避免本机 Clash 把智谱请求拖慢
+    resp = requests.post(url, headers=headers, json=payload, timeout=60, proxies={"http": None, "https": None})
     resp.raise_for_status()
     data = resp.json()
     message = data["choices"][0]["message"]
@@ -316,6 +317,10 @@ def call_llm(model_id, system, user, history=None):
         extra = {"thinking": {"type": "disabled"}}
     elif spec["thinking"]:
         extra = {"enable_thinking": False}
+    # 短答任务少给 token，减轻尾部拖延；全流程也不要 2k
+    tok = 700
+    if model_id in ("glm-z1-flash", "glm-4.5-flash", "glm-4.7-flash"):
+        tok = 900
     try:
         text = _openai_chat(
             provider["url"],
@@ -323,6 +328,7 @@ def call_llm(model_id, system, user, history=None):
             spec["api"],
             messages,
             extra_body=extra,
+            max_tokens=tok,
         )
         return text, False
     except Exception as e:
@@ -787,26 +793,26 @@ def run_module(action, payload):
             % (
                 extra.get("scene") or "writing",
                 extra.get("question") or text,
-                (u"\n已上传论文《%s》，回答必须紧扣正文：\n%s" % (filename, _clip(text, 5000))) if text else u"",
+                (u"\n已上传论文《%s》，回答必须紧扣正文：\n%s" % (filename, _clip(text, 2200))) if text else u"",
             )
         ),
-        "evaluate": u"文件名：%s\n请评估：\n%s" % (filename, _clip(text)),
-        "outline": u"主题：%s\n文稿：\n%s" % (extra.get("topic") or _guess_topic(text, filename), _clip(text, 3500)),
+        "evaluate": u"文件名：%s\n请评估（简洁）：\n%s" % (filename, _clip(text, 2800)),
+        "outline": u"主题：%s\n文稿：\n%s" % (extra.get("topic") or _guess_topic(text, filename), _clip(text, 2200)),
         "coach": u"章节：%s\n学生作答：%s\n文稿摘录：%s"
-        % (extra.get("chapter") or "", extra.get("answer") or "", _clip(text, 2500)),
-        "polish": u"文件：%s\n%s" % (filename, _clip(text)),
-        "abstract": u"要求：%s\n正文：\n%s" % (extra.get("requirement") or u"本科毕业论文摘要", _clip(text)),
-        "refs": u"标准：%s\n条目：\n%s" % (extra.get("standard") or u"GB/T 7714—2025 顺序编码制", _clip(text, 4000)),
+        % (extra.get("chapter") or "", extra.get("answer") or "", _clip(text, 1500)),
+        "polish": u"文件：%s\n%s" % (filename, _clip(text, 2800)),
+        "abstract": u"要求：%s\n正文：\n%s" % (extra.get("requirement") or u"本科毕业论文摘要", _clip(text, 2800)),
+        "refs": u"标准：%s\n条目：\n%s" % (extra.get("standard") or u"GB/T 7714—2025 顺序编码制", _clip(text, 2500)),
         "path": u"专业：%s\n技能：%s\n兴趣：%s\n作业：\n%s"
-        % (extra.get("major"), extra.get("skills"), extra.get("interest"), _clip(text, 2500)),
-        "submit": u"规范：\n%s\n论文：\n%s" % (_clip(extra.get("guide") or "", 2500), _clip(text)),
-        "reviewer": u"风格：%s\n论文：\n%s" % (extra.get("style") or "gentle", _clip(text)),
-        "retrospect": u"历史记录：\n%s" % json.dumps(extra.get("records") or [], ensure_ascii=False)[:4000],
-        "pipeline": u"请输出全流程优化报告。文件：%s\n%s" % (filename, _clip(text)),
+        % (extra.get("major"), extra.get("skills"), extra.get("interest"), _clip(text, 1500)),
+        "submit": u"规范：\n%s\n论文：\n%s" % (_clip(extra.get("guide") or "", 1500), _clip(text, 2500)),
+        "reviewer": u"风格：%s\n论文：\n%s" % (extra.get("style") or "gentle", _clip(text, 2800)),
+        "retrospect": u"历史记录：\n%s" % json.dumps(extra.get("records") or [], ensure_ascii=False)[:2500],
+        "pipeline": u"快速全流程短报告。文件：%s\n正文摘录：\n%s" % (filename, _clip(text, 2200)),
         "venue": u"根据这篇论文推荐期刊或会议，说明适合原因和投稿前要补的内容。不要向用户索要正文。\n文件：%s\n论文：\n%s"
-        % (filename, _clip(text)),
+        % (filename, _clip(text, 2200)),
         "ppt": u"根据这篇论文写约12页答辩PPT大纲和40秒开场讲稿。每页对应论文中的题目、方法或实验。不要复述任务说明。\n文件：%s\n论文：\n%s"
-        % (filename, _clip(text)),
+        % (filename, _clip(text, 2200)),
     }
     sys_p = SYSTEM_PROMPTS.get(action) or SYSTEM_PROMPTS["chat"]
     user = user_map.get(action) or (
