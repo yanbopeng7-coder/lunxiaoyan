@@ -51,10 +51,8 @@
       fetch(PUBLIC_API_BASE + "/api/health").catch(function () {});
     }, 300);
   }
-  var BUILTIN_KEYS = {
-    zhipu: "ae254bc152dc43518f5c7ced8ea29de4.MgFXogJxxLuisNcB",
-    groq: "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"
-  };
+  // 密钥不进公开仓库：只读本机 localStorage；服务端用 .env / Worker Secret
+  var BUILTIN_KEYS = { zhipu: "", groq: "" };
   var LIVE_MODELS = {
     "glm-4-flash": { api: "glm-4-flash", thinking: false, provider: "zhipu" },
     "glm-4-flash-250414": { api: "glm-4-flash-250414", thinking: false, provider: "zhipu" },
