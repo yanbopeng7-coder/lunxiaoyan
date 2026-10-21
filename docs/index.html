@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=35" />
+  <link rel="stylesheet" href="static/css/style.css?v=36" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -189,11 +189,12 @@
       </section>
 
       <section class="page" id="page-reader">
-        <div class="hero"><h1>沉浸式阅读与双向翻译</h1><p>模块三：标题树 · [n]↔References · 中英联动滚动</p></div>
+        <div class="hero"><h1>沉浸式阅读与双向翻译</h1><p>模块三：标题树 · [n]↔References · 中英联动滚动 · 整句对照（禁中英混杂）</p></div>
         <div class="card">
           <div class="row">
             <select id="readerSelect"></select>
             <button class="btn" type="button" onclick="openReader()">打开阅读器</button>
+            <button class="btn ghost" type="button" onclick="polishReaderZh()">模型补全中文</button>
           </div>
           <div id="readerRoot"></div>
         </div>
@@ -555,9 +556,9 @@
   <script src="static/vendor/fflate.min.js?v=23"></script>
   <script src="static/vendor/pdf.min.js?v=23"></script>
   <script src="static/js/readfile.js?v=23"></script>
-  <script src="static/js/pages-demo.js?v=35"></script>
-  <script src="static/js/app.js?v=35"></script>
-  <script type="module" src="static/js/copilot-ui.js?v=35"></script>
-  <script type="module" src="static/js/agent-ui.js?v=35"></script>
+  <script src="static/js/pages-demo.js?v=36"></script>
+  <script src="static/js/app.js?v=36"></script>
+  <script type="module" src="static/js/copilot-ui.js?v=36"></script>
+  <script type="module" src="static/js/agent-ui.js?v=36"></script>
 </body>
 </html>
