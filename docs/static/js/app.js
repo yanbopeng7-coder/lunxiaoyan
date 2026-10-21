@@ -159,8 +159,14 @@
         return d;
       }).catch(function (e) {
         loading(false);
-        toast(e.message || "模型请求失败");
-        throw e;
+        // GitHub Pages 直连大模型会被浏览器 CORS 拦住；回退本地完整演示，保证评委仍能点出结果
+        var msg = (e && e.message) || "";
+        if (/Failed to fetch|NetworkError|CORS|Load failed/i.test(msg)) {
+          toast("浏览器拦了在线模型，已切换本地完整演示");
+        } else {
+          toast((msg || "模型请求失败") + "，已切换本地演示");
+        }
+        return localResult(action, extra, text, filename);
       });
     }
     return fetch("/api/run", {
