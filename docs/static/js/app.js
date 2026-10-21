@@ -325,6 +325,7 @@
     return (fileOf(key).text) || "";
   }
 
+  window.api = api;
   window.runTool = function (key) {
     var f = fileOf(key);
     var text = textOf(key);
