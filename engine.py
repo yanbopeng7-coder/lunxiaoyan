@@ -146,6 +146,7 @@ SYSTEM_PROMPTS = {
     "reviewer": "你按指定审稿人风格写评审意见、修改建议与返修提问。",
     "retrospect": "你对照多份历史评估/润色记录，总结进步点、遗留问题与后续优化优先级。",
     "pipeline": "你对论文做快速全流程体检。只输出精炼中文报告，总分控制在 600 字内：综合分、3条优点、3条不足、大纲调整要点、润色要点、文献问题、下一步3条。不要长篇展开。",
+    "translate": "你是中英学术翻译。把英文论文段落译为通顺中文。保留 BLEU、GPU、Adam、公式与专有名词原文；禁止中英单词混杂插替。按用户给出的 [1][2]… 编号逐段只输出译文，不要解释。",
 }
 SYSTEM_PROMPTS.update(EXTRA_PROMPTS)
 
@@ -809,6 +810,12 @@ def run_module(action, payload):
         "reviewer": u"风格：%s\n论文：\n%s" % (extra.get("style") or "gentle", _clip(text, 2800)),
         "retrospect": u"历史记录：\n%s" % json.dumps(extra.get("records") or [], ensure_ascii=False)[:2500],
         "pipeline": u"快速全流程短报告。文件：%s\n正文摘录：\n%s" % (filename, _clip(text, 2200)),
+        "translate": u"%s\n\n待译段落：\n%s"
+        % (
+            extra.get("note")
+            or u"英译中，按 [1][2]… 输出通顺中文，保留公式与专名。",
+            _clip(text, 3500),
+        ),
         "venue": u"根据这篇论文推荐期刊或会议，说明适合原因和投稿前要补的内容。不要向用户索要正文。\n文件：%s\n论文：\n%s"
         % (filename, _clip(text, 2200)),
         "ppt": u"根据这篇论文写约12页答辩PPT大纲和40秒开场讲稿。每页对应论文中的题目、方法或实验。不要复述任务说明。\n文件：%s\n论文：\n%s"
