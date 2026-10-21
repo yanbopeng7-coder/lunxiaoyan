@@ -40,25 +40,16 @@
   }
   function ensureApiBase() {
     if (!isStaticHost()) return Promise.resolve("");
+    // 直接打已配置地址，不再先 /api/health 多等一轮
     if (_apiBaseReady) return _apiBaseReady;
-    var candidates = [];
-    if (window.LX_API_BASE) candidates.push(String(window.LX_API_BASE).replace(/\/$/, ""));
-    candidates.push(PUBLIC_API_BASE);
-    _apiBaseReady = (function next(i) {
-      if (i >= candidates.length) return Promise.resolve(PUBLIC_API_BASE);
-      var b = candidates[i];
-      return fetch(b + "/api/health", { method: "GET" })
-        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d, b: b }; }); })
-        .then(function (pack) {
-          if (pack.ok && pack.d && pack.d.ok !== false) {
-            PUBLIC_API_BASE = pack.b;
-            return pack.b;
-          }
-          return next(i + 1);
-        })
-        .catch(function () { return next(i + 1); });
-    })(0);
+    _apiBaseReady = Promise.resolve(PUBLIC_API_BASE);
     return _apiBaseReady;
+  }
+  // 页面一打开就预热隧道，减少第一次点击的等待
+  if (typeof location !== "undefined" && /github\.io$/i.test(location.hostname || "")) {
+    setTimeout(function () {
+      fetch(PUBLIC_API_BASE + "/api/health").catch(function () {});
+    }, 300);
   }
   var BUILTIN_KEYS = {
     zhipu: "ae254bc152dc43518f5c7ced8ea29de4.MgFXogJxxLuisNcB",
@@ -139,7 +130,7 @@
     var body = {
       model: spec.api,
       temperature: 0.4,
-      max_tokens: 2048,
+      max_tokens: 900,
       messages: [
         { role: "system", content: "你是论小研，面向本科生与研究生的科研论文写作助手。用中文给出可执行的结果，紧扣用户原文，不要空泛套话。" },
         { role: "user", content: liveAsk(action, extra, text, filename) }
