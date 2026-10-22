@@ -13,9 +13,10 @@ import {
 } from './lab/reader.js';
 import {
   searchArxiv, filterQuality, drillDownRefs, recommendFromLibrary,
-  itemToPaperDraft, renderSearchResults, refLineToQuery,
+  itemToPaperDraft, renderSearchResults,
 } from './lab/retrieve.js';
 import { corpusToPapers, buildCitationGraph, generateSurvey, renderGraphSvg, DEMO_CORPUS } from './lab/graph.js';
+import { runAgent, renderPlanHtml, renderThoughtsHtml, planTasks } from './lab/agent.js';
 
 function $(id) { return document.getElementById(id); }
 function toast(msg) {
@@ -145,15 +146,19 @@ window.ingestLibFile = async function () {
   let extra = {};
   if (/\.pdf$/i.test(f.name)) {
     try {
-      const r = await extractPdfText(f);
-      if (r.ocrNeeded) {
-        toast(r.note || '扫描件需 OCR');
-        text = `[OCR_PENDING]\nTitle: ${f.name}\nAbstract: Scanned PDF without text layer. Pages=${r.numPages}.\n1 Introduction\nPlaceholder for OCR text.`;
-        extra.ocrNeeded = true;
-      } else {
-        text = r.text;
-        if (r.truncated) toast('长 PDF 仅解析前 80 页（分级加载）');
-      }
+      toast('正在解析 PDF…');
+      const r = await extractPdfText(f, {
+        onProgress: (p) => {
+          if (p.phase === 'ocr') toast(`OCR 识别中 ${p.page}/${p.total}…`);
+          else if (p.phase === 'text' && p.page % 10 === 0) toast(`抽取文本层 ${p.page}/${p.total}…`);
+        },
+      });
+      text = r.text;
+      extra.ocrNeeded = !!r.ocrNeeded;
+      extra.ocrUsed = !!r.ocrUsed;
+      if (r.note) toast(r.note);
+      else if (r.ocrUsed) toast('扫描件 OCR 完成');
+      else if (r.truncated) toast('长 PDF 已分级加载');
     } catch (e) {
       toast('PDF 解析失败：' + e.message);
       return;
@@ -163,9 +168,44 @@ window.ingestLibFile = async function () {
   }
   const { paper, duplicates } = await ingestText(text, { filename: f.name, ...extra });
   paper.ocrNeeded = !!extra.ocrNeeded;
+  paper.ocrUsed = !!extra.ocrUsed;
   await commitPaper(paper, duplicates);
   setHtml('libDetail', structureReportHtml(paper));
   await refreshLibraryList();
+};
+
+window.previewAgentPlan = function () {
+  const goal = (($('agentGoal') && $('agentGoal').value) || '全流程科研演示').trim();
+  const steps = planTasks(goal);
+  setHtml('agentPlan', renderPlanHtml(steps));
+  setHtml('agentThoughts', '<p class="muted">点击「执行编排」开始；思考过程将流式显示。</p>');
+  setHtml('agentResult', '');
+};
+
+window.runResearchAgent = async function () {
+  const goal = (($('agentGoal') && $('agentGoal').value) || '全流程科研演示').trim();
+  setHtml('agentPlan', renderPlanHtml(planTasks(goal)));
+  setHtml('agentThoughts', '');
+  setHtml('agentResult', '<p class="muted">Agent 执行中…</p>');
+  toast('Agent 开始编排');
+  const out = await runAgent(goal, {
+    question: ($('agentQuestion') && $('agentQuestion').value) || '',
+    retrieveQuery: ($('agentRetrieve') && $('agentRetrieve').value) || 'transformer',
+    idea: ($('agentIdea') && $('agentIdea').value) || '',
+    onPlan: (steps) => setHtml('agentPlan', renderPlanHtml(steps)),
+    onThink: (_t, all) => setHtml('agentThoughts', renderThoughtsHtml(all)),
+    onStep: (step, steps) => setHtml('agentPlan', renderPlanHtml(steps)),
+  });
+  let html = `<p><b>编排${out.ok ? '成功' : '部分失败'}</b> · run ${esc(out.runId)}</p>`;
+  out.results.forEach((r) => {
+    if (r.html) html += `<div class="report">${r.html}</div>`;
+    else if (r.data && r.data.mermaid) {
+      html += `<h4>Mermaid</h4><div class="pre">${esc(r.data.mermaid)}</div>`;
+    }
+  });
+  setHtml('agentResult', html);
+  await refreshLibraryList();
+  toast(out.ok ? '科研 Agent 闭环完成（可纯前端演示）' : '部分步骤失败，见思考日志');
 };
 
 window.ingestLibPaste = async function () {
