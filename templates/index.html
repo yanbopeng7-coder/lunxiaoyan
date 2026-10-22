@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=37" />
+  <link rel="stylesheet" href="static/css/style.css?v=38" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -197,6 +197,8 @@
         <div class="card">
           <div class="row">
             <button class="btn gold" type="button" onclick="loadAttentionDemo()">一键 Attention v1→v7 去重测例</button>
+            <button class="btn ghost" type="button" onclick="loadScanOcrDemo()">扫描件 OCR 测例 PDF</button>
+            <button class="btn ghost" type="button" onclick="loadLongBookDemo()">长文档分级加载测例</button>
             <input type="file" id="libFile" accept=".pdf,.txt,.md" />
             <button class="btn" type="button" onclick="ingestLibFile()">上传入库</button>
           </div>
@@ -588,9 +590,9 @@
   <script src="static/vendor/fflate.min.js?v=23"></script>
   <script src="static/vendor/pdf.min.js?v=23"></script>
   <script src="static/js/readfile.js?v=23"></script>
-  <script src="static/js/pages-demo.js?v=37"></script>
-  <script src="static/js/app.js?v=37"></script>
-  <script type="module" src="static/js/copilot-ui.js?v=37"></script>
-  <script type="module" src="static/js/agent-ui.js?v=37"></script>
+  <script src="static/js/pages-demo.js?v=38"></script>
+  <script src="static/js/app.js?v=38"></script>
+  <script type="module" src="static/js/copilot-ui.js?v=38"></script>
+  <script type="module" src="static/js/agent-ui.js?v=38"></script>
 </body>
 </html>
