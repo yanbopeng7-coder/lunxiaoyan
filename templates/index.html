@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=36" />
+  <link rel="stylesheet" href="static/css/style.css?v=37" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -56,6 +56,7 @@
 
       <div class="h">科研 Agent</div>
       <div class="nav-group">
+        <label class="nav-item"><input type="radio" name="nav" value="agent" onclick="go('agent')" /> 意图编排中枢</label>
         <label class="nav-item"><input type="radio" name="nav" value="library" onclick="go('library')" /> 文献库解析</label>
         <label class="nav-item"><input type="radio" name="nav" value="rag" onclick="go('rag')" /> 抗幻觉问答</label>
         <label class="nav-item"><input type="radio" name="nav" value="reader" onclick="go('reader')" /> 沉浸阅读翻译</label>
@@ -138,17 +139,18 @@
           <div class="scard c3 feat" onclick="go('diagram')"><b>架构拓扑图</b><span>Mermaid / Graphviz / TikZ / Matplotlib</span></div>
           <div class="scard c4 feat" onclick="go('csvviz')"><b>CSV 数据可视化</b><span>折线/柱状/雷达图 + 学术图注 + LaTeX 表</span></div>
         </div>
-        <div class="section-head"><h2>科研 Agent 六大模块</h2><p>文献解析 · 抗幻觉 RAG · 双向阅读 · 检索推荐 · 引用图谱 · 写作可视化</p></div>
+        <div class="section-head"><h2>科研 Agent 六大模块</h2><p>意图编排 · 文献解析/OCR · 抗幻觉 RAG · 双向阅读 · 检索推荐 · 引用图谱 · 写作可视化</p></div>
         <div class="cards3">
-          <div class="scard c1 feat" onclick="go('library')"><b>文献库解析</b><span>CRUD · Attention v1/v7 语义去重 · 标题树/公式/参考文献</span></div>
+          <div class="scard c5 feat" onclick="go('agent')"><b>意图编排中枢</b><span>Task Planning · 多工具路由 · 思考过程可视化（Pages 可离线演示）</span></div>
+          <div class="scard c1 feat" onclick="go('library')"><b>文献库解析</b><span>CRUD · v1/v7 去重 · 文本层 + 扫描件 OCR</span></div>
           <div class="scard c2 feat" onclick="go('rag')"><b>抗幻觉问答</b><span>BM25 检索 · 原文锚点 · 多文对比拒编造</span></div>
-          <div class="scard c3 feat" onclick="go('reader')"><b>沉浸阅读</b><span>[n]↔Refs 跳转 · 中英对照联动滚动</span></div>
         </div>
         <div class="cards3">
+          <div class="scard c3 feat" onclick="go('reader')"><b>沉浸阅读</b><span>[n]↔Refs 跳转 · 中英对照联动滚动</span></div>
           <div class="scard c4 feat" onclick="go('retrieve')"><b>检索推荐</b><span>arXiv 代理 · 参考文献下钻 · GitHub 优先</span></div>
-          <div class="scard c5 feat" onclick="go('graph')"><b>引用图谱</b><span>PageRank 基石节点 · 综述 · Future Work 挖掘</span></div>
-          <div class="scard c1 feat" onclick="go('csvviz')"><b>写作 Copilot</b><span>CSV 图注 · Mermaid/TikZ · 无幻觉框架</span></div>
+          <div class="scard c1 feat" onclick="go('graph')"><b>引用图谱 + 写作</b><span>PageRank · 综述 · CSV/Mermaid Copilot</span></div>
         </div>
+        <p class="muted" style="margin:8px 0 0;font-size:12.5px">公网演示：本站 GitHub Pages 静态可跑 Agent 六模块主路径；大模型写作需本机 <code>启动论小研.bat</code> + 隧道（或评委克隆后填 <code>.env</code>）。环境变量模板见仓库 <code>.env.example</code>——与「在线演示地址」是两项不同提交要求。</p>
         <div class="card">
           <b>核心亮点：一键论文全流程辅助</b>
           <p style="color:var(--muted);font-size:13.5px">上传初稿后自动：内容评估 → 大纲优化 → 语言润色 → 参考文献整理 → 完整优化报告。演示用例《计算机专业本科毕业论文初稿.docx》。</p>
@@ -160,8 +162,38 @@
         </div>
       </section>
 
+      <section class="page" id="page-agent">
+        <div class="hero"><h1>意图驱动 · 科研 Agent 编排中枢</h1><p>Task Planning → 多工具调用 → 思考日志（可纯前端闭环，冲 Agent 技术深度分）</p></div>
+        <div class="card">
+          <label class="muted">研究意图 / 目标</label>
+          <textarea id="agentGoal" rows="2" placeholder="例：全流程演示：Attention 去重 + RAG 问 β1 + 多文对比 + arXiv 检索 + 图谱综述 + 写作框架">全流程科研演示：去重 RAG 对比 检索 图谱 写作</textarea>
+          <div class="grid2">
+            <div>
+              <label class="muted">RAG 问题（可选）</label>
+              <input id="agentQuestion" type="text" value="Adam beta_1 beta_2 and how many P100 GPUs?" style="width:100%" />
+            </div>
+            <div>
+              <label class="muted">检索词（可选）</label>
+              <input id="agentRetrieve" type="text" value="transformer attention" style="width:100%" />
+            </div>
+          </div>
+          <label class="muted">写作 idea（可选）</label>
+          <input id="agentIdea" type="text" value="occlusion-aware campus pedestrian detection" style="width:100%" />
+          <div class="row" style="margin-top:10px">
+            <button class="btn ghost" type="button" onclick="previewAgentPlan()">只生成计划</button>
+            <button class="btn gold" type="button" onclick="runResearchAgent()">执行编排</button>
+          </div>
+          <h4>任务计划</h4>
+          <div id="agentPlan"></div>
+          <h4>思考过程</h4>
+          <div id="agentThoughts" class="report"></div>
+          <h4>汇总输出</h4>
+          <div id="agentResult"></div>
+        </div>
+      </section>
+
       <section class="page" id="page-library">
-        <div class="hero"><h1>文献库 · PDF 解析与语义去重</h1><p>模块一：CRUD · SimHash/MinHash 去重 · 细粒度结构抽取</p></div>
+        <div class="hero"><h1>文献库 · PDF 解析与语义去重</h1><p>模块一：CRUD · SimHash 去重 · 文本层解析 · 扫描件 OCR（Tesseract）</p></div>
         <div class="card">
           <div class="row">
             <button class="btn gold" type="button" onclick="loadAttentionDemo()">一键 Attention v1→v7 去重测例</button>
@@ -556,9 +588,9 @@
   <script src="static/vendor/fflate.min.js?v=23"></script>
   <script src="static/vendor/pdf.min.js?v=23"></script>
   <script src="static/js/readfile.js?v=23"></script>
-  <script src="static/js/pages-demo.js?v=36"></script>
-  <script src="static/js/app.js?v=36"></script>
-  <script type="module" src="static/js/copilot-ui.js?v=36"></script>
-  <script type="module" src="static/js/agent-ui.js?v=36"></script>
+  <script src="static/js/pages-demo.js?v=37"></script>
+  <script src="static/js/app.js?v=37"></script>
+  <script type="module" src="static/js/copilot-ui.js?v=37"></script>
+  <script type="module" src="static/js/agent-ui.js?v=37"></script>
 </body>
 </html>
