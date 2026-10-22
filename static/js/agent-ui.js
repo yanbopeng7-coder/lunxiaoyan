@@ -120,6 +120,54 @@ async function commitPaper(paper, duplicates) {
 
 window.refreshLibraryList = refreshLibraryList;
 
+window.loadScanOcrDemo = async function () {
+  try {
+    toast('下载扫描件 PDF 并 OCR…');
+    const r = await fetch('static/demo/papers/attention-scan-ocr-demo.pdf', { cache: 'no-store' });
+    const blob = await r.blob();
+    const file = new File([blob], 'attention-scan-ocr-demo.pdf', { type: 'application/pdf' });
+    const parsed = await extractPdfText(file, {
+      maxOcrPages: 1,
+      onProgress: (p) => {
+        if (p.phase === 'ocr') toast('OCR ' + p.page + '/' + p.total);
+      },
+    });
+    const { paper, duplicates } = await ingestText(parsed.text, {
+      filename: file.name,
+      source: 'scan-ocr-demo',
+      ocrUsed: !!parsed.ocrUsed,
+      ocrNeeded: !!parsed.ocrNeeded,
+    });
+    paper.ocrUsed = !!parsed.ocrUsed;
+    paper.ocrNeeded = !!parsed.ocrNeeded;
+    await commitPaper(paper, duplicates);
+    setHtml('libDetail', structureReportHtml(paper) +
+      `<p class="muted">${esc(parsed.note || '')}</p><div class="pre" style="max-height:160px;overflow:auto">${esc((parsed.text || '').slice(0, 600))}</div>`);
+    await refreshLibraryList();
+    toast(parsed.ocrUsed ? '扫描件 OCR 入库完成' : (parsed.note || '已入库'));
+  } catch (e) {
+    toast('扫描 OCR 测例失败：' + (e.message || e));
+  }
+};
+
+window.loadLongBookDemo = async function () {
+  try {
+    toast('载入长文档节选（模拟 541 页分级切块）…');
+    const t = await fetch('static/demo/papers/understanding-dl-excerpt-long.txt', { cache: 'no-store' }).then((r) => r.text());
+    const { paper, duplicates } = await ingestText(t, {
+      filename: 'understanding-dl-excerpt-long.txt',
+      source: 'long-book-demo',
+    });
+    await commitPaper(paper, duplicates);
+    setHtml('libDetail', structureReportHtml(paper) +
+      `<p class="muted">合成长文约 ${t.length} 字 / ${(paper.chunks || []).length} chunks / ${(paper.pages || []).length} 分片，用于演示百页书的切块与索引，而非整本 541 页真书。</p>`);
+    await refreshLibraryList();
+    toast('长文档测例已入库');
+  } catch (e) {
+    toast('长文档测例失败：' + (e.message || e));
+  }
+};
+
 window.loadAttentionDemo = async function () {
   try {
     const { v1, v7 } = await loadDemoPair();
