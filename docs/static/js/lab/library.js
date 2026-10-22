@@ -169,7 +169,34 @@ function guessVersion(arxiv) {
   return m ? Number(m[1]) : 1;
 }
 
-export async function extractPdfText(file) {
+async function loadTesseract() {
+  if (window.Tesseract) return window.Tesseract;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Tesseract CDN 加载失败'));
+    document.head.appendChild(s);
+  });
+  return window.Tesseract;
+}
+
+/** 将 PDF 页渲染为 canvas，供 OCR */
+async function renderPdfPageToCanvas(page, scale = 1.6) {
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return canvas;
+}
+
+/**
+ * 真 PDF 解析：优先文本层；扫描件自动 OCR（前若干页）。
+ * 长文档分级加载（默认最多 120 页文本 / OCR 前 3 页）。
+ */
+export async function extractPdfText(file, opts = {}) {
   if (!window.pdfjsLib && !window.pdfjs) {
     throw new Error('未加载 pdf.js');
   }
@@ -177,26 +204,80 @@ export async function extractPdfText(file) {
   if (pdfjs.GlobalWorkerOptions && !pdfjs.GlobalWorkerOptions.workerSrc) {
     pdfjs.GlobalWorkerOptions.workerSrc = 'static/vendor/pdf.worker.min.js';
   }
+  const maxTextPages = opts.maxTextPages || 120;
+  const maxOcrPages = opts.maxOcrPages || 3;
+  const onProgress = opts.onProgress || (() => {});
+
   const buf = await file.arrayBuffer();
   const doc = await pdfjs.getDocument({ data: buf }).promise;
   const pages = [];
-  const max = Math.min(doc.numPages, 80);
+  const max = Math.min(doc.numPages, maxTextPages);
+  let emptyPages = 0;
   for (let i = 1; i <= max; i++) {
+    onProgress({ phase: 'text', page: i, total: max });
     const page = await doc.getPage(i);
     const content = await page.getTextContent();
-    const str = content.items.map((it) => it.str).join(' ');
-    pages.push(str);
+    const str = content.items.map((it) => it.str).join(' ').replace(/\s+/g, ' ').trim();
+    if (!str) emptyPages++;
+    pages.push(str ? `--- Page ${i} ---\n${str}` : '');
   }
-  const text = pages.join('\n\n');
-  if (!text.trim()) {
+  let text = pages.filter(Boolean).join('\n\n');
+  const textChars = text.replace(/\s/g, '').length;
+  const looksScanned = textChars < 80 || emptyPages >= Math.max(1, Math.floor(max * 0.7));
+
+  if (looksScanned) {
+    onProgress({ phase: 'ocr-start', page: 0, total: Math.min(doc.numPages, maxOcrPages) });
+    try {
+      const Tesseract = await loadTesseract();
+      const ocrN = Math.min(doc.numPages, maxOcrPages);
+      const ocrParts = [];
+      for (let i = 1; i <= ocrN; i++) {
+        onProgress({ phase: 'ocr', page: i, total: ocrN });
+        const page = await doc.getPage(i);
+        const canvas = await renderPdfPageToCanvas(page, 1.7);
+        const result = await Tesseract.recognize(canvas, 'eng+chi_sim', {
+          logger: () => {},
+        });
+        const t = (result && result.data && result.data.text) || '';
+        if (t.trim()) ocrParts.push(`--- Page ${i} (OCR) ---\n${t.trim()}`);
+      }
+      if (ocrParts.length) {
+        text = ocrParts.join('\n\n');
+        return {
+          text,
+          ocrNeeded: false,
+          ocrUsed: true,
+          numPages: doc.numPages,
+          truncated: doc.numPages > ocrN,
+          note: `扫描件已 OCR 前 ${ocrParts.length} 页（共 ${doc.numPages} 页）。长书可继续分页入库。`,
+        };
+      }
+    } catch (e) {
+      return {
+        text: text || `[OCR_FAILED]\nTitle: ${file.name}\nAbstract: Scanned PDF. OCR error: ${e.message || e}\n1 Introduction\nPlease paste OCR text or retry.`,
+        ocrNeeded: true,
+        ocrUsed: false,
+        numPages: doc.numPages,
+        note: '扫描件 OCR 失败（网络/CDN）。可粘贴文本或使用 Attention 测例。',
+      };
+    }
     return {
-      text: '',
+      text: text || `[OCR_EMPTY]\nTitle: ${file.name}\nAbstract: No text layer and OCR empty.\n1 Introduction\nPlaceholder.`,
       ocrNeeded: true,
-      note: '该 PDF 无文本层（可能是扫描件）。已标记待 OCR；演示可用 Attention 测例或粘贴 OCR 文本。',
+      ocrUsed: true,
       numPages: doc.numPages,
+      note: '扫描件 OCR 未识别出文字。',
     };
   }
-  return { text, ocrNeeded: false, numPages: doc.numPages, truncated: doc.numPages > max };
+
+  return {
+    text,
+    ocrNeeded: false,
+    ocrUsed: false,
+    numPages: doc.numPages,
+    truncated: doc.numPages > max,
+    note: doc.numPages > max ? `长文档仅解析前 ${max} 页文本层（共 ${doc.numPages} 页），已分级切块。` : '',
+  };
 }
 
 export function findDuplicates(paper, existing) {
