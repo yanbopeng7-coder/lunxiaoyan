@@ -187,6 +187,15 @@ select, input[type="text"], input[type="password"], textarea, .field {
 .rd-zh.pending { opacity: 0.92; }
 .zh-badge { display: inline-block; font-size: 11px; color: #92400e; background: #fef3c7; border-radius: 4px; padding: 0 6px; margin-right: 6px; vertical-align: middle; }
 .reader-col h4 { margin: 8px 12px 0; font-size: 13px; color: var(--muted); }
+.agent-plan { margin: 8px 0; padding-left: 1.2em; }
+.agent-plan li { margin: 8px 0; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card, #fff); }
+.agent-plan .st-running { border-color: var(--blue); }
+.agent-plan .st-done { border-color: #16a34a; }
+.agent-plan .st-warn, .agent-plan .st-error { border-color: #dc2626; }
+.agent-sum { margin-top: 4px; font-size: 13px; }
+.agent-err { color: #b91c1c; font-size: 13px; }
+.agent-thoughts { max-height: 260px; overflow: auto; font-size: 13px; line-height: 1.55; }
+.agent-thoughts .thought { padding: 4px 0; border-bottom: 1px dashed var(--line); }
 @media (max-width: 1100px) {
   .reader-layout { grid-template-columns: 1fr; }
   .reader-panes { grid-template-columns: 1fr; }
