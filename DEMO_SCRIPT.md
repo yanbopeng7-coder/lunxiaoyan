@@ -1,6 +1,7 @@
 # 演示视频脚本（5–8 分钟）
 
-> 建议 1080p、Chrome 全屏。提前打开 https://yanbopeng7-coder.github.io/lunxiaoyan/ ，清空文献库后开始录制。
+> 已生成成片：`论小研-科研Agent演示-最终.mp4`（5:06，1080p，中文旁白 + 软字幕）。
+> 下方脚本可用于重录或答辩讲解。建议 1080p、Chrome 全屏。提前打开 https://yanbopeng7-coder.github.io/lunxiaoyan/ ，清空文献库后开始录制。
 
 ## 0:00–0:30 开场
 
