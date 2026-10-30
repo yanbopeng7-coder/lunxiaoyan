@@ -173,7 +173,7 @@ async function loadTesseract() {
   if (window.Tesseract) return window.Tesseract;
   await new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    s.src = 'static/ocr/tesseract.min.js';
     s.onload = resolve;
     s.onerror = () => reject(new Error('Tesseract CDN 加载失败'));
     document.head.appendChild(s);
@@ -231,16 +231,21 @@ export async function extractPdfText(file, opts = {}) {
       const Tesseract = await loadTesseract();
       const ocrN = Math.min(doc.numPages, maxOcrPages);
       const ocrParts = [];
+      const worker = await Tesseract.createWorker('eng', 1, {
+        workerPath: 'static/ocr/worker.min.js',
+        corePath: 'static/ocr/',
+        langPath: 'static/ocr/lang/',
+        logger: () => {},
+      });
       for (let i = 1; i <= ocrN; i++) {
         onProgress({ phase: 'ocr', page: i, total: ocrN });
         const page = await doc.getPage(i);
         const canvas = await renderPdfPageToCanvas(page, 1.7);
-        const result = await Tesseract.recognize(canvas, 'eng+chi_sim', {
-          logger: () => {},
-        });
+        const result = await worker.recognize(canvas);
         const t = (result && result.data && result.data.text) || '';
         if (t.trim()) ocrParts.push(`--- Page ${i} (OCR) ---\n${t.trim()}`);
       }
+      try { await worker.terminate(); } catch (e) {}
       if (ocrParts.length) {
         text = ocrParts.join('\n\n');
         return {
