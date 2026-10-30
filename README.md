@@ -58,6 +58,24 @@ Flask 提供 `/api/llm`（服务端持钥，避免浏览器 CORS）和 `/api/arx
 - 公网地址必须稳定：学校固定域名 + Nginx 反代，或 Cloudflare **Named Tunnel**
 - 不要把临时 `trycloudflare.com` 地址写进前端，隧道重启后会失效
 
+### 4. 在线模型（可选，推荐 Cloudflare Worker）
+
+不想维护服务器时，用 [`deploy/cloudflare-worker`](deploy/cloudflare-worker/README.md)：
+
+```bash
+cd deploy/cloudflare-worker
+wrangler deploy worker.js --name lunxiaoyan-api
+wrangler secret put ZHIPU_API_KEY
+```
+
+把 Worker 地址写入 `docs/index.html`：
+
+```html
+<script>window.LX_API_BASE = "https://lunxiaoyan-api.你的子域.workers.dev";</script>
+```
+
+密钥只在 Worker Secret，仓库里仍无任何 Key。
+
 ## 三、目录
 
 ```
@@ -66,7 +84,7 @@ Flask 提供 `/api/llm`（服务端持钥，避免浏览器 CORS）和 `/api/arx
 ├─ docs/                            GitHub Pages 发布目录
 │  └─ static/js/lab/                Agent 算法模块（浏览器端）
 ├─ deploy/linux/                    systemd、启动脚本、部署说明
-├─ 论小研-科研Agent演示.mp4          演示视频（提交前替换为最终版）
+├─ 论小研-科研Agent演示-最终.mp4  演示视频（5:06 · 1080p · 中文旁白 + 软字幕）
 └─ requirements.txt / .env.example
 ```
 
