@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>论小研应用方案</title>
+<style>
+  @page {
+    size: A4;
+    margin: 15mm 13mm 13mm 13mm;
+    @top-left {
+      content: "论小研  ·  应用方案";
+      font-family: "Microsoft YaHei", sans-serif;
+      font-size: 8pt;
+      letter-spacing: 0.04em;
+      color: #1B3A4B;
+    }
+    @top-right {
+      content: "百度秒哒   ·   文心大模型";
+      font-family: "Microsoft YaHei", sans-serif;
+      font-size: 8pt;
+      color: #8C7344;
+    }
+    @bottom-center {
+      content: counter(page);
+      font-family: "Microsoft YaHei", sans-serif;
+      font-size: 9pt;
+      color: #1B3A4B;
+    }
+  }
+  @page :first {
+    margin: 0;
+    @top-left { content: none; }
+    @top-right { content: none; }
+    @bottom-center { content: none; }
+  }
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    font-size: 10.2pt;
+    line-height: 1.55;
+    color: #1c1917;
+  }
+  h2 {
+    font-size: 14.5pt;
+    line-height: 1.25;
+    color: #1B3A4B;
+    margin: 0 0 2.4mm;
+    padding-bottom: 1.4mm;
+    border-bottom: 1.6px solid #1B3A4B;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  h2 + p, h2 + .lead, .lead + .fn, h2 + .fn { break-before: avoid; page-break-before: avoid; }
+  h2 .k { color: #A68546; font-weight: 700; margin-right: 2.2mm; font-size: 11pt; }
+  h3 { font-size: 11pt; margin: 0 0 1mm; color: #1B3A4B; break-after: avoid; }
+  p { margin: 0 0 2.2mm; }
+  .lead {
+    background: #F6F1E7;
+    border-left: 3px solid #C6A36A;
+    padding: 2.2mm 3.2mm;
+    margin: 0 0 3mm;
+    font-size: 10pt;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 8.6pt; line-height: 1.4; margin: 0 0 3mm; }
+  th, td { border: 1px solid #E4DDD2; padding: 1.3mm 1.8mm; vertical-align: top; text-align: left; }
+  th { background: #1B3A4B; color: #fff; font-weight: 600; }
+  tr:nth-child(even) td { background: #FBF8F3; }
+  .cap { font-size: 8.2pt; color: #57534e; margin: 1mm 0 2.6mm; line-height: 1.4; }
+  .hero {
+    margin: 0 0 1mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .hero img {
+    width: 100%;
+    height: 72mm;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+    border: 1px solid #E4DDD2;
+    border-radius: 2mm;
+  }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2.6mm; margin: 0 0 3mm; }
+  .box {
+    background: #F7F3EC;
+    border-top: 2.5px solid #1B3A4B;
+    padding: 2.4mm 2.8mm 2.6mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .box b { display: block; color: #1B3A4B; font-size: 10.2pt; margin-bottom: 0.6mm; }
+  .box p { margin: 0; font-size: 9pt; line-height: 1.48; color: #292524; }
+  .box.gold { border-top-color: #C6A36A; }
+  .steps { margin: 0 0 3mm; }
+  .step {
+    display: grid;
+    grid-template-columns: 8mm 1fr;
+    gap: 2mm;
+    margin: 0 0 1.6mm;
+    break-inside: avoid;
+  }
+  .step i {
+    display: block;
+    width: 7mm;
+    height: 7mm;
+    border-radius: 50%;
+    background: #1B3A4B;
+    color: #fff;
+    font-style: normal;
+    font-size: 8.5pt;
+    line-height: 7mm;
+    text-align: center;
+    font-weight: 700;
+  }
+  .step p { margin: 0; font-size: 9.4pt; }
+  .step b { color: #1B3A4B; }
+  .fn {
+    display: block;
+    border: 1px solid #E4DDD2;
+    border-radius: 1.6mm;
+    overflow: hidden;
+    margin: 0 0 3.4mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    background: #fff;
+  }
+  .fn .txt { padding: 2.2mm 3.2mm 1.6mm; background: #FBF8F3; border-bottom: 1px solid #E4DDD2; }
+  .fn .tag {
+    display: inline-block;
+    font-size: 7.6pt;
+    letter-spacing: 0.04em;
+    color: #8C7344;
+    border: 1px solid #E4D3B0;
+    background: #fff;
+    border-radius: 2mm;
+    padding: 0 1.4mm;
+    margin-bottom: 0.8mm;
+  }
+  .fn h3 { font-size: 10.6pt; }
+  .fn h3 span { color: #C6A36A; font-size: 8.5pt; margin-right: 1.2mm; }
+  .fn p { margin: 0; font-size: 8.5pt; line-height: 1.45; color: #292524; }
+  .fn img {
+    width: 100%;
+    height: 44mm;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+  }
+  .note { font-size: 9pt; color: #44403c; }
+
+  .cover {
+    width: 210mm;
+    height: 297mm;
+    overflow: hidden;
+    position: relative;
+    color: #F6F1E7;
+    background:
+      radial-gradient(ellipse at 110% -10%, rgba(198,163,106,.42), transparent 46%),
+      linear-gradient(168deg, #21485C 0%, #1B3A4B 42%, #102430 100%);
+    break-after: page;
+    page-break-after: always;
+  }
+  .cover .inner { padding: 18mm 16mm 0; }
+  .cover .eye {
+    font-size: 10pt;
+    letter-spacing: 0.18em;
+    color: #C6A36A;
+    margin: 0 0 2mm;
+  }
+  .cover .track { font-size: 10.5pt; margin: 0 0 10mm; color: #E7E1D6; }
+  .cover h1 {
+    font-size: 52pt;
+    line-height: 1;
+    margin: 0 0 4mm;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+  .cover .sub { font-size: 13pt; line-height: 1.55; margin: 0 0 5mm; color: #F3EEE6; max-width: 150mm; }
+  .cover .rule { width: 28mm; height: 1.2mm; background: #C6A36A; margin: 0 0 6mm; }
+  .cover .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; margin: 0 0 6mm; }
+  .cover .stats div {
+    border: 1px solid rgba(198,163,106,.45);
+    padding: 3mm 3.5mm 2.6mm;
+    background: rgba(255,255,255,.04);
+  }
+  .cover .stats b { display: block; font-size: 16pt; color: #F6E7C8; font-weight: 700; line-height: 1.15; }
+  .cover .stats span { font-size: 9pt; color: #E4DCCE; }
+  .cover .frame {
+    background: #fff;
+    padding: 1.6mm;
+    border-radius: 2mm;
+    box-shadow: 0 8mm 18mm rgba(0,0,0,.28);
+  }
+  .cover .frame img { width: 100%; height: 118mm; object-fit: cover; object-position: top center; display: block; border-radius: 1mm; }
+  .cover .bottom {
+    position: absolute;
+    left: 16mm;
+    right: 16mm;
+    bottom: 12mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-top: 1px solid rgba(198,163,106,.55);
+    padding-top: 3.5mm;
+    font-size: 9.5pt;
+    color: #E7E1D6;
+  }
+  .cover .bottom b { display: block; color: #F6E7C8; font-size: 11pt; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="inner">
+    <p class="eye">应用方案</p>
+    <p class="track">2026 iCAN 大学生创新创业大赛<br>AI无代码智能体挑战赛 · 秒哒无代码应用创新赛题</p>
+    <h1>论小研</h1>
+    <p class="sub">面向缺少专人指导的本科生与研究生。<br>评估、大纲、润色、摘要、投稿对照和答辩演练，收进同一个对话，始终对着这一篇稿子。</p>
+    <div class="rule"></div>
+    <div class="stats">
+      <div><b>31 项</b><span>写作功能，分组放在同一页</span></div>
+      <div><b>1 篇正文</b><span>上传之后，各功能共同阅读</span></div>
+      <div><b>文心</b><span>秒哒内置模型，按功能切换角色</span></div>
+    </div>
+    <div class="frame"><img src="img/c-home.png" alt="论小研首页" /></div>
+  </div>
+  <div class="bottom">
+    <div><b>百度秒哒</b>自然语言搭建的网页应用</div>
+    <div><b>论小研</b>app-f0h51oxvcmip.miaoda.online</div>
+  </div>
+</section>
+
+<h2><span class="k">01</span>要解决的问题</h2>
+<p>本科生和研究生写论文，难的常常不是完全不会写，而是没有人顺着这一篇稿子往下看。导师时间有限，通用对话又容易脱离原稿：学生换一个窗口，就要把题目、方法和实验再介绍一遍。改了几版之后，自己也难判断创新点有没有写清、实验缺了哪一组对照、参考文献是不是还停在旧标准。</p>
+<p class="lead">论小研补的是这一段。把同一篇正文放在页面里，评估、大纲、润色、摘要、投稿和答辩都读这一份文字。建议对着稿子写，缺的数字标成待补，不把举例说成已经做过的实验。</p>
+<table>
+  <tr><th style="width:28mm">情形</th><th>学生实际遇到的事</th><th>论小研怎么接</th></tr>
+  <tr><td>没有人看稿</td><td>改了几版，说不清哪一版真正变好了</td><td>评估写出整体评价、优点、缺点和可执行建议；复盘对照前后记录</td></tr>
+  <tr><td>提纲不贴题</td><td>网上的通用提纲和自己的实验对不上</td><td>文献与大纲按当前正文生成五章结构、文献建议和研究问题</td></tr>
+  <tr><td>实验写不深</td><td>只报一个指标，没有消融，也没有失败情况</td><td>实验设计助手列出对照、消融和失败案例；没有的数标待补</td></tr>
+  <tr><td>格式来回改</td><td>预印本、标准、西文姓名写法不统一</td><td>参考文献按 GB/T 7714—2025 顺序编码制整理</td></tr>
+  <tr><td>答辩来不及</td><td>不知道会被追问创新点、对照和失败案例</td><td>答辩模拟按当前论文出题，并给出追问和参考回答</td></tr>
+</table>
+<div class="grid2">
+  <div class="box"><b>给谁用</b><p>正在写课程论文、毕业论文或阶段研究报告的本科生与研究生。默认他们已经有一份初稿或提纲，缺的是对着这篇稿子的修改意见。</p></div>
+  <div class="box gold"><b>不替代什么</b><p>输出是修改建议和学生自己的底稿。它不代替学生提交的终稿，也不把模型生成的段落直接当成可以交上去的章节。</p></div>
+</div>
+
+<h2><span class="k">02</span>创作理念</h2>
+<p>作品在百度秒哒上用自然语言搭成。理念只有一句：所有功能围着同一篇正文转，文心每次只做这一步该做的事。</p>
+<div class="grid2">
+  <div class="box"><b>一篇稿贯穿</b><p>顶栏显示文件名和字数。上传或载入示例之后，左侧每一个功能读的都是这份正文。换功能不用重新粘贴，也不用重新介绍题目。</p></div>
+  <div class="box"><b>对话是入口</b><p>智能论文助手保留最近六轮。说到评估、大纲、润色、摘要、投稿、答辩，先回答，再切到对应面板，按该面板的角色再调用一次文心。</p></div>
+  <div class="box"><b>切换不换网址</b><p>功能切换发生在页面状态里。地址不变，结果写在当前工作区。首页也写明：结果都在本页呈现，不会跳转。</p></div>
+  <div class="box"><b>建议要能照着改</b><p>评估给出整体评价、综合评分、优点、缺点和具体建议。陪练先出引导题，学生作答后再点评。不停留在空泛鼓励。</p></div>
+  <div class="box"><b>缺的数字标待补</b><p>正文没有写的速度、资源占用、消融结果，保持待补。模型可以指出缺什么，不能把举例写成这篇论文的实验结果。</p></div>
+  <div class="box gold"><b>规范提示不是查重</b><p>评估里的学术规范重合度，只提示表述和著录是否规范，帮助看原创性风险。它不是查重鉴定，也不能写成重复率结论。</p></div>
+</div>
+
+<h2><span class="k">03</span>示例稿，以及从打开到改完</h2>
+<p>载入示例使用的是一份计算机专业本科毕业论文初稿，题目是《基于深度学习的校园行人检测与轨迹分析系统》。方法是 YOLOv8 与 ByteTrack。数据写明 8 个校园场景、12400 张图像。结果只报告了 mAP@0.5 = 86.4%，比基线高 4.7 个百分点。载入后顶栏显示 3898 字。</p>
+<p>这份初稿被故意留下几处真实缺陷：创新点写成「具有较好的检测效果」，没有消融，没有失败案例，引用格式混用，预印本容易被标成网络文献，标准还停在旧的著录方式，相关工作按年份排列。后面的功能都对着这些缺陷说话，不另编一组实验数字。</p>
+<div class="steps">
+  <div class="step"><i>1</i><p><b>放入正文。</b>首页上传 docx、pdf、txt 或 md，也可以点顶栏「载入示例」。读完后顶栏出现文件名和字数，当前论文卡片写「正文已就绪」。</p></div>
+  <div class="step"><i>2</i><p><b>先看全流程，或直接提问。</b>「开始全流程」在本页按顺序调用四次文心：评估、大纲、润色、参考文献，再合成一份优化报告。也可以先打开智能论文助手。</p></div>
+  <div class="step"><i>3</i><p><b>评估对着稿子打分。</b>论文智能评估阅读这 3898 字，写出整体评价、综合评分、优点和缺点。这一次实测的综合评分是 65 分，依据写在结果里，不另改分数。</p></div>
+  <div class="step"><i>4</i><p><b>大纲按这篇实验来。</b>文献与大纲给出五章结构、八条文献建议和三个研究问题，技术线跟着行人检测与轨迹分析走，而不是一套放之各专业皆准的提纲。</p></div>
+  <div class="step"><i>5</i><p><b>陪练先问再评。</b>实时写作陪练先出引导题。学生在文本框写完，再提交，导师角色给出点评和分数。没有作答就不会直接给一个空的高分。</p></div>
+  <div class="step"><i>6</i><p><b>润色、摘要、文献各做一次。</b>润色看语言、逻辑和学术表达。摘要同时出中英文和关键词，并保住 mAP 这类符号。参考文献按 GB/T 7714—2025 改条目。</p></div>
+  <div class="step"><i>7</i><p><b>实验和答辩补缺口。</b>实验设计指出只报了 mAP、缺少消融和失败案例。答辩模拟围绕这篇论文出题。速度、显存、帧率若稿子里没有，就标待补。</p></div>
+  <div class="step"><i>8</i><p><b>复盘看哪条还没改。</b>论文写作复盘把评估记录和润色记录放进同一次调用，列出进步、遗留问题和下一轮优先级。还没有这两份记录时，界面会提示先各做一次。</p></div>
+</div>
+
+<h2><span class="k">04</span>在秒哒上的产品形态</h2>
+<p>论小研是百度秒哒上的一个网页应用，不是把模型权重部署在作品自己的服务器里。学生打开页面就能用。阅读和生成由秒哒内置的文心大模型完成，作品侧负责把「当前论文正文」和该功能的补充输入组织成一次问答。</p>
+<div class="grid2">
+  <div class="box"><b>一个页面，五组功能</b><p>左侧是功能栏，右侧是当前工作区。五组为：基础功能、开题选题、写作表达、规范与实验、答辩与投稿。点任何一项，只更换右侧内容，不新开网址，不刷新整页。</p></div>
+  <div class="box"><b>顶栏始终看着这一篇</b><p>顶栏左侧是「论小研」，中间是文件名和字数。右侧可以载入示例，也可以切换深色，方便长时间看稿。换功能时，这份正文还在。</p></div>
+  <div class="box"><b>上传在浏览器里完成</b><p>docx、pdf、txt、md 可以点选，也可以拖进去。txt 和 md 按文本读取。docx 读取压缩包中 word/document.xml 的文字。pdf 逐页取文字。旧版 doc 提示另存为 docx。读失败只在当前窗口说明原因。</p></div>
+  <div class="box gold"><b>按钮不离开这一页</b><p>各功能的操作按钮都留在当前面板。生成过程中，结果区会显示「文心大模型生成中」。生成结束后，文字写在同一块区域，可以接着改、接着问。</p></div>
+</div>
+<table>
+  <tr><th style="width:32mm">文件</th><th>浏览器里怎么读</th><th>读完之后</th></tr>
+  <tr><td>txt、md</td><td>按文本读入</td><td>写入共用正文，顶栏显示文件名和字数</td></tr>
+  <tr><td>docx</td><td>解开压缩包，取 word/document.xml 中的文字</td><td>同上，不另存一份到新页面</td></tr>
+  <tr><td>pdf</td><td>逐页取出文字</td><td>扫描件若抽不出文字，在当前窗口说明</td></tr>
+  <tr><td>doc</td><td>不直接解析</td><td>提示另存为 docx 再上传</td></tr>
+</table>
+<p class="note">共用正文是全站唯一的稿子。首页卡片、对话和三十个功能面板读的是同一段文字。某个功能若还有额外栏，例如期刊格式、审稿意见、待改写段落，那段内容只加进这一次调用，不覆盖正文。</p>
+
+<h2><span class="k">05</span>文心怎样被调用</h2>
+<p>每一次点击或发送，对应一次文心问答。系统侧是该功能的角色，用户侧是共用正文，再加上这个面板上的补充栏。不把三十个功能合成一次超长提问，也不在学生没有操作时自动连呼。</p>
+<table>
+  <tr><th style="width:28mm">部分</th><th>放什么</th><th>为什么这样分</th></tr>
+  <tr><td>系统角色</td><td>这个功能的职责。评估是评审，润色是学术中文编辑，参考文献是著录编辑，答辩是出题与参考回答</td><td>角色一换，输出结构就跟着换，避免所有按钮都返回同一段聊天</td></tr>
+  <tr><td>用户内容</td><td>当前论文正文。有额外栏时，把研究主题、拟题、章节、期刊要求、审稿意见等接在后面</td><td>模型必须看见这篇稿，建议才能落到具体句子和具体实验</td></tr>
+  <tr><td>对话记忆</td><td>智能论文助手保留最近六轮</td><td>追问不用从头介绍题目，也不把更早的闲聊无限累加</td></tr>
+  <tr><td>等待与呈现</td><td>结果区显示文心正在生成，完成后写在本面板</td><td>学生知道这一步在读稿，而不是页面失去响应</td></tr>
+</table>
+<p>首页「一键全流程」是唯一按顺序连做的入口，而且仍然在同一页：第一次评估，第二次大纲，第三次润色，第四次参考文献，最后合成一份优化报告。四次的角色不同，读的正文相同。报告写在首页下方，不跳到新地址。</p>
+<div class="grid2">
+  <div class="box"><b>助手里的一句话</b><p>学生输入「帮我评估这篇论文」。助手先按对话角色回答，再把面板切到论文智能评估，并按评审角色再调用一次。大纲、润色、摘要、投稿、答辩同样处理。</p></div>
+  <div class="box gold"><b>面板上的一次点击</b><p>学生也可以不说话，直接点「开始评估」「生成大纲」「出题演练」。这次调用不再经过对话，系统角色就是该面板自己的角色。</p></div>
+</div>
+<table>
+  <tr><th>学生说到</th><th>先做什么</th><th>然后切到</th><th>第二次角色</th></tr>
+  <tr><td>评估这篇论文</td><td>对话里先给出方向</td><td>论文智能评估</td><td>评审：整体评价、评分、优缺点</td></tr>
+  <tr><td>文献与大纲</td><td>先说明提纲会按本稿来</td><td>文献与大纲</td><td>规划：五章、文献建议、研究问题</td></tr>
+  <tr><td>润色</td><td>先指出大概要改的层面</td><td>初稿润色分析</td><td>编辑：语言、逻辑、学术表达</td></tr>
+  <tr><td>摘要</td><td>先确认摘要要覆盖的结果</td><td>摘要与关键词</td><td>编辑：中英文摘要和关键词</td></tr>
+  <tr><td>投稿</td><td>先问清有没有格式要求</td><td>投稿适配优化</td><td>投稿顾问：三项清单</td></tr>
+  <tr><td>答辩</td><td>先点出可能被追问的点</td><td>答辩模拟</td><td>出题：题目、追问、参考回答</td></tr>
+</table>
+<p class="note">快捷问题已经放在对话里：论文大纲怎么写、摘要优化建议、文献怎么总结、答辩老师最爱问什么。场景分为论文写作、文献辅助、科研指导和论文写作四组入口，问法不同，背后仍是这一篇正文。</p>
+
+<h2><span class="k">06</span>首页：一篇稿，四次调用</h2>
+<p>首页标题是「论文写作全流程工作台」。说明文字写明面向缺少专人指导的本科生与研究生，所有功能共用同一份论文正文。当前论文卡片给出文件名、字数和「上传论文」。示例载入后是《计算机专业本科毕业论文初稿》，3898 字。</p>
+<div class="hero"><img src="img/c-home.png" alt="首页工作台" /></div>
+<p class="cap">图 1　首页。上传或载入示例之后，一键全流程在本页依次调用文心四次：评估、大纲、润色、参考文献，再写成优化报告。下方卡片进入各功能，仍不离开这一份正文。</p>
+<p>「开始全流程」适合想先看完整诊断的人。四步都结束后，首页的全流程优化报告区留下每一步的结果。若只想改一件事，点卡片或左侧栏即可：论文智能评估、文献与大纲、实时写作陪练、初稿润色分析、参考文献整理，以及其余分组里的功能，入口都从这里能到。</p>
+
+<h2><span class="k">07</span>一次真实的评估</h2>
+<p>下面是文心阅读这份示例初稿后的论文智能评估，生成过程中按钮变为「生成中」，结果区标明文心大模型正在输出。综合评分 65 分。依据是：选题有实际意义，结构完整，技术路线合理，但实验部分不够深入，缺少对系统性能的全面分析，文献引用格式也不够规范。</p>
+<div class="hero"><img src="img/c-result.png" alt="论文智能评估结果" /></div>
+<p class="cap">图 2　论文智能评估的一次输出。优点里的 8 个场景、12400 张图像、mAP@0.5 = 86.4% 和高出基线 4.7 个百分点，都来自示例稿原文。缺点指出只报了 mAP，这些缺口应标为待补。</p>
+<table>
+  <tr><th style="width:28mm">结果里的话</th><th>和示例稿的关系</th></tr>
+  <tr><td>优点</td><td>对准校园行人检测这一选题，以及 YOLOv8、ByteTrack、自建数据和 86.4% 这一唯一报告的指标</td></tr>
+  <tr><td>缺点</td><td>实验只给了 mAP@0.5，没有不同场景、不同光照，也没有推理速度和资源占用。这些是稿子里确实没写的</td></tr>
+  <tr><td>随后怎么用</td><td>实验设计助手把缺的对照和消融列成清单；参考文献整理去改著录；复盘时看 65 分里的哪一条已经改掉</td></tr>
+</table>
+<p class="note">这一页只采用这次输出里能够回到示例稿的内容。模型若在修改建议里举出稿子没有的帧率、显存或别的精度，那些数字不进入本方案，也不应当被学生写进论文。</p>
+
+<h2><span class="k">08</span>三十一个功能各做一次什么</h2>
+<p>下表按界面上的分组列出全部功能。除首页全流程会连做四次以外，其余每一行都是一次文心调用：角色不同，正文相同。</p>
+<table>
+  <tr><th style="width:10mm">序</th><th style="width:32mm">功能</th><th style="width:22mm">分组</th><th>学生提供</th><th>文心这一次写出</th></tr>
+  <tr><td>1</td><td>首页 · 全流程</td><td>基础功能</td><td>当前正文</td><td>评估、大纲、润色、参考文献，再合成优化报告</td></tr>
+  <tr><td>2</td><td>智能论文助手</td><td>基础功能</td><td>问题，最近六轮</td><td>先回答；认到功能则再按该功能调用一次</td></tr>
+  <tr><td>3</td><td>论文智能评估</td><td>基础功能</td><td>当前正文</td><td>整体评价、0–100 分、四项分项、优缺点</td></tr>
+  <tr><td>4</td><td>文献与大纲</td><td>基础功能</td><td>研究主题，可空</td><td>五章大纲、八条文献建议、三个研究问题</td></tr>
+  <tr><td>5</td><td>实时写作陪练</td><td>基础功能</td><td>先要题，再作答</td><td>引导题；作答后的点评与分数</td></tr>
+  <tr><td>6</td><td>初稿润色分析</td><td>基础功能</td><td>当前正文</td><td>语言、逻辑、学术表达与改写示例</td></tr>
+  <tr><td>7</td><td>摘要与关键词</td><td>基础功能</td><td>目标要求，可空</td><td>中英文摘要与关键词，保留指标符号</td></tr>
+  <tr><td>8</td><td>参考文献整理</td><td>基础功能</td><td>著录制式：顺序编码制</td><td>按 GB/T 7714—2025 修正后的条目</td></tr>
+  <tr><td>9</td><td>选题可行性</td><td>开题选题</td><td>拟题</td><td>可行性、空白、风险和更窄的写法</td></tr>
+  <tr><td>10</td><td>开题报告</td><td>开题选题</td><td>当前正文</td><td>依据、内容、方案和约十二周进度</td></tr>
+  <tr><td>11</td><td>文献综述撰写</td><td>开题选题</td><td>当前正文</td><td>按技术线的框架和过渡段</td></tr>
+  <tr><td>12</td><td>进度与任务书</td><td>开题选题</td><td>当前正文</td><td>任务目标、里程碑和交付物</td></tr>
+  <tr><td>13</td><td>科研路径规划</td><td>开题选题</td><td>专业、技能、兴趣</td><td>三个月短期路径和中长期路径</td></tr>
+  <tr><td>14</td><td>学术降重改写</td><td>写作表达</td><td>待改写段落</td><td>改写对照，删空话，判断前置</td></tr>
+  <tr><td>15</td><td>章节扩写</td><td>写作表达</td><td>章节，默认绪论</td><td>可粘贴段落，并指出还缺什么</td></tr>
+  <tr><td>16</td><td>中英学术翻译</td><td>写作表达</td><td>待翻译段落</td><td>译文，保留指标符号，附用词提醒</td></tr>
+  <tr><td>17</td><td>两稿对照</td><td>写作表达</td><td>修改说明或第二版</td><td>进步点，以及未改的高优先级项</td></tr>
+  <tr><td>18</td><td>论文写作复盘</td><td>写作表达</td><td>评估记录、润色记录</td><td>进步、遗留问题和后续优先级</td></tr>
+  <tr><td>19</td><td>术语与缩写表</td><td>规范与实验</td><td>当前正文</td><td>全称缩写对照，统一用词</td></tr>
+  <tr><td>20</td><td>公式与符号</td><td>规范与实验</td><td>当前正文</td><td>指标定义及指标之间的关系</td></tr>
+  <tr><td>21</td><td>图表与表题</td><td>规范与实验</td><td>当前正文</td><td>图题、表题和图注写法</td></tr>
+  <tr><td>22</td><td>实验设计助手</td><td>规范与实验</td><td>当前正文</td><td>对照、消融和失败案例清单</td></tr>
+  <tr><td>23</td><td>复现实验清单</td><td>规范与实验</td><td>当前正文</td><td>五步复现清单和应留档的文件</td></tr>
+  <tr><td>24</td><td>伦理致谢声明</td><td>规范与实验</td><td>当前正文</td><td>授权、脱敏、原创声明和致谢草稿</td></tr>
+  <tr><td>25</td><td>投稿适配优化</td><td>答辩与投稿</td><td>期刊或学校格式，可空</td><td>格式、侧重、结构三项清单</td></tr>
+  <tr><td>26</td><td>审稿人模拟</td><td>答辩与投稿</td><td>三种风格之一</td><td>该风格下的评审意见和追问</td></tr>
+  <tr><td>27</td><td>审稿意见回复</td><td>答辩与投稿</td><td>收到的审稿意见</td><td>逐条回复，缺数据标待补</td></tr>
+  <tr><td>28</td><td>期刊会议推荐</td><td>答辩与投稿</td><td>当前正文</td><td>先看学位是否达标，再谈补齐项</td></tr>
+  <tr><td>29</td><td>答辩模拟</td><td>答辩与投稿</td><td>练习类别</td><td>三类题、追问和参考回答</td></tr>
+  <tr><td>30</td><td>答辩 PPT 大纲</td><td>答辩与投稿</td><td>当前正文</td><td>十二页结构和开场讲稿</td></tr>
+  <tr><td>31</td><td>导师周报</td><td>答辩与投稿</td><td>本周进展，可空</td><td>邮件标题和约一百五十字周报</td></tr>
+</table>
+
+<h2><span class="k">09</span>基础功能</h2>
+<p class="lead">这一组是每天改稿都会用到的入口。对话负责听懂要做什么，评估、大纲、陪练、润色、摘要和参考文献各自调用一次文心，角色互不混用。</p>
+
+<article class="fn">
+  <div class="txt"><div class="tag">基础功能</div><h3><span>02</span>智能论文助手</h3><p>输入问题后发送，保留最近六轮。提到评估、大纲、润色、摘要、投稿、答辩时，先回答，再切到对应面板，按该模块角色再调用一次。快捷问题包括大纲怎么写、摘要优化、文献怎么总结、答辩最爱问什么。</p></div>
+  <img src="img/c-assistant.png" alt="智能论文助手" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">基础功能</div><h3><span>03</span>论文智能评估</h3><p>没有额外栏。点击「开始评估」，文心以评审角色阅读当前正文，给出整体评价、0–100 综合评分和四项分项，并写出优点、缺点和建议。规范重合度只提示表述是否规范，不是查重结论。</p></div>
+  <img src="img/c-evaluate.png" alt="论文智能评估" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">基础功能</div><h3><span>04</span>文献与大纲</h3><p>可填写研究主题。点击「生成大纲」，按当前正文给出五章大纲、八条文献建议和三个研究问题。文献按技术线组织，不按年份堆成流水账。示例稿会落到行人检测与轨迹分析，而不是通用提纲。</p></div>
+  <img src="img/c-outline.png" alt="文献与大纲" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">基础功能</div><h3><span>05</span>实时写作陪练</h3><p>分两步调用。先点「给我出引导题」，文心根据正文出题；学生在文本框作答后再次提交，导师角色再给点评和分数。先引导，再评分，避免还没写就得到一个空的评价。</p></div>
+  <img src="img/c-coach.png" alt="实时写作陪练" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">基础功能</div><h3><span>06</span>初稿润色分析</h3><p>点击「开始润色分析」。从语言、逻辑、学术表达三条线诊断，给出亮点、通顺度和改写示例。润色结果用来改自己的句子，不代替学生提交的终稿。</p></div>
+  <img src="img/c-polish.png" alt="初稿润色分析" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">基础功能</div><h3><span>07</span>摘要与关键词</h3><p>可写目标要求，例如字数或学校模板。点击「生成摘要」，输出中文摘要、英文摘要和中英文关键词。mAP 等符号保持原样，不另造正文里没有的数字。</p></div>
+  <img src="img/c-abstract.png" alt="摘要与关键词" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">基础功能</div><h3><span>08</span>参考文献整理</h3><p>著录制式为顺序编码制。点击「整理参考文献」，按 GB/T 7714—2025 修正条目。西文姓仅首字母大写，名缩写不加下点。预印本用 PP/OL，不用 EB/OL。标准只写编号和名称。不用 2015 版写法。</p></div>
+  <img src="img/c-refs.png" alt="参考文献整理" />
+</article>
+
+<h2><span class="k">10</span>开题选题</h2>
+<p class="lead">开题阶段还没有完整实验时，这一组用来收窄题目、写出开题报告、搭综述框架、排进度，并给一条能执行的科研路径。依据仍是当前正文，不另起一个无关题目。</p>
+
+<article class="fn">
+  <div class="txt"><div class="tag">开题选题</div><h3><span>09</span>选题可行性</h3><p>填写拟题后点击「评估可行性」。文心给出可行性判断、研究空白、风险，以及更窄的题目写法。判断要能回到当前正文里的方法和数据，不能只说题目「有意义」。</p></div>
+  <img src="img/c-feasibility.png" alt="选题可行性" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">开题选题</div><h3><span>10</span>开题报告</h3><p>点击「生成开题报告」。按选题依据、研究内容、方案和大约十二周进度来写，口径与当前初稿一致。进度是写作安排，不是把还没做的实验写成已经完成。</p></div>
+  <img src="img/c-proposal.png" alt="开题报告" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">开题选题</div><h3><span>11</span>文献综述撰写</h3><p>点击「生成综述框架」。按技术线组织相关工作，并写出段落之间的过渡，避免编年体流水账。示例稿里按年份堆砌的相关工作，应改成按检测、跟踪和轨迹分析来分。</p></div>
+  <img src="img/c-litreview.png" alt="文献综述撰写" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">开题选题</div><h3><span>12</span>进度与任务书</h3><p>点击「生成进度任务书」。写出任务目标、里程碑和每周交付物，方便对着日历改。交付物是这一周要交的文字或实验记录，不把未测的指标提前写成结果。</p></div>
+  <img src="img/c-schedule.png" alt="进度与任务书" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">开题选题</div><h3><span>13</span>科研路径规划</h3><p>填写专业、已掌握技能和研究兴趣，点击「规划科研路径」。给出三个月内要补的短板，以及一到两年的中长期路径。路径对着这篇作业，不写成空泛的职业建议。</p></div>
+  <img src="img/c-path.png" alt="科研路径规划" />
+</article>
+
+<h2><span class="k">11</span>写作表达</h2>
+<p class="lead">这一组处理句子和版本。降重要改结构和信息顺序，扩写要标明还缺什么，翻译要保住指标符号，对照和复盘用来看这一版比上一版到底多了哪几条。</p>
+
+<article class="fn">
+  <div class="txt"><div class="tag">写作表达</div><h3><span>14</span>学术降重改写</h3><p>把待改写段落放进文本框，点击「开始改写」。输出改写对照：判断写在前面，空话删掉。禁止只换同义词。当前正文仍作为语境，避免改完的句子和后文术语不一致。</p></div>
+  <img src="img/c-rewrite.png" alt="学术降重改写" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">写作表达</div><h3><span>15</span>章节扩写</h3><p>选择章节，默认从绪论开始，点击「扩写本章」。生成可粘贴的学术段落，并指出还缺的数据、对照或文献。扩写不能把 86.4% 之外的新精度写进段落。</p></div>
+  <img src="img/c-expand.png" alt="章节扩写" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">写作表达</div><h3><span>16</span>中英学术翻译</h3><p>放入待翻译段落，点击「开始翻译」。中英互译，保留 mAP@0.5 这类指标符号，并提示容易译歪的术语，例如跟踪、轨迹热力和基线对比。</p></div>
+  <img src="img/c-translate.png" alt="中英学术翻译" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">写作表达</div><h3><span>17</span>两稿对照</h3><p>放入修改说明或第二版摘录，点击「开始对照」。相对当前正文列出进步，以及仍未改的高优先级项。用来回答「这一版到底改了没有」。</p></div>
+  <img src="img/c-compare.png" alt="两稿对照" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">写作表达</div><h3><span>18</span>论文写作复盘</h3><p>把已有的评估记录和润色记录放进同一次调用，点击「开始复盘」。总结进步、遗留问题和下一轮先改什么。还没有这两份记录时，界面提示先去评估和润色各生成一次。</p></div>
+  <img src="img/c-retrospect.png" alt="论文写作复盘" />
+</article>
+
+<h2><span class="k">12</span>规范与实验</h2>
+<p class="lead">这一组管全稿的用词、图表、实验和声明。实验方案可以列出还缺的对照，但稿子里没有的速度、帧率和资源占用保持待补，不补成虚假结果。</p>
+
+<article class="fn">
+  <div class="txt"><div class="tag">规范与实验</div><h3><span>19</span>术语与缩写表</h3><p>点击「生成缩写表」。抽出全称和缩写，指出用词不统一的地方，建议全稿只用一套说法。例如检测模型、跟踪方法和评价指标，不要在各章各写一个名字。</p></div>
+  <img src="img/c-terms.png" alt="术语与缩写表" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">规范与实验</div><h3><span>20</span>公式与符号</h3><p>点击「生成指标定义」。按正文整理指标如何定义、彼此如何互补。正文没写的指标标成待补，不写成这篇论文已经报告的结果。mAP@0.5 的写法保持原样。</p></div>
+  <img src="img/c-formulas.png" alt="公式与符号" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">规范与实验</div><h3><span>21</span>图表与表题</h3><p>点击「生成图表规范」。给出图题、表题和图注写法，使图注离开正文仍能读懂。示例稿的检测结果图应能单独说明 8 个场景和 86.4% 指的是什么。</p></div>
+  <img src="img/c-captions.png" alt="图表与表题" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">规范与实验</div><h3><span>22</span>实验设计助手</h3><p>点击「设计实验方案」。列出对照、消融和失败案例该怎么补。示例稿只报告了 mAP@0.5 以及相对基线高 4.7 个百分点，其余条件保持待补，并写进表格骨架，而不是编一组新数。</p></div>
+  <img src="img/c-experiment.png" alt="实验设计助手" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">规范与实验</div><h3><span>23</span>复现实验清单</h3><p>点击「生成复现清单」。按五步写下模型、数据和指标怎么复现，哪些文件要留档。未在正文出现的超参数不当成事实，只标成复现前需要作者自己补上的项。</p></div>
+  <img src="img/c-reproduce.png" alt="复现实验清单" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">规范与实验</div><h3><span>24</span>伦理致谢声明</h3><p>点击「生成声明草稿」。起草授权、脱敏、原创声明和致谢。校园场景若涉及行人，要提示是否说明采集范围和脱敏方式，不替作者宣称已经取得某种未写明的许可。</p></div>
+  <img src="img/c-ethics.png" alt="伦理致谢声明" />
+</article>
+
+<h2><span class="k">13</span>答辩与投稿</h2>
+<p class="lead">稿子基本成形之后，用这一组做投稿对照、模拟审稿、回复意见、准备答辩页序，以及给导师的短周报。学位要求放在刊物推荐之前。</p>
+
+<article class="fn">
+  <div class="txt"><div class="tag">答辩与投稿</div><h3><span>25</span>投稿适配优化</h3><p>可贴上期刊或学校的格式要求，也可以留空。点击「开始适配分析」。留空时做 GB/T 7714—2025 文献检查，并给出格式、内容侧重和结构三项清单。</p></div>
+  <img src="img/c-submit.png" alt="投稿适配优化" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">答辩与投稿</div><h3><span>26</span>审稿人模拟</h3><p>选择审稿风格，打开后默认是温和导师，一共三种。点击「开始模拟评审」，按该风格写意见、修改建议，以及返修时会追问的点。意见对着当前正文，不套用别的论文。</p></div>
+  <img src="img/c-reviewer.png" alt="审稿人模拟" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">答辩与投稿</div><h3><span>27</span>审稿意见回复</h3><p>把收到的审稿意见贴进来，点击「撰写回复」。逐条回应：改了的写改在哪里，正文里没有的数据写成待补，不编成已经补做的实验。</p></div>
+  <img src="img/c-response.png" alt="审稿意见回复" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">答辩与投稿</div><h3><span>28</span>期刊会议推荐</h3><p>点击「生成推荐」。先看学位和学校格式是否已经满足，再给出候选刊物或会议，并说明还差哪几条。不把推荐写成已经可以投稿的结论。</p></div>
+  <img src="img/c-venues.png" alt="期刊会议推荐" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">答辩与投稿</div><h3><span>29</span>答辩模拟</h3><p>练习类别可以选择全部三类，也可以分开练。点击「出题演练」，围绕当前论文出题，并给出追问和参考回答。示例稿会被问到创新点是否说清、有没有对照、失败案例在哪里。</p></div>
+  <img src="img/c-defense.png" alt="答辩模拟" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">答辩与投稿</div><h3><span>30</span>答辩 PPT 大纲</h3><p>点击「生成 PPT 大纲」。给出约十二页的页序和一段开场讲稿，页序跟着当前论文的章节走。讲稿里的数字只使用正文已有的 8 个场景、12400 张图像和 86.4%。</p></div>
+  <img src="img/c-ppt.png" alt="答辩PPT大纲" />
+</article>
+<article class="fn">
+  <div class="txt"><div class="tag">答辩与投稿</div><h3><span>31</span>导师周报</h3><p>本周进展可以手写，也可以留空。点击「生成周报」，输出邮件标题和大约一百五十字的周报。内容来自当前正文和所写进展，不另编这一周没有做过的实验。</p></div>
+  <img src="img/c-weekly.png" alt="导师周报" />
+</article>
+
+<h2><span class="k">14</span>学术边界</h2>
+<div class="grid2">
+  <div class="box"><b>著录用现行国标</b><p>参考文献功能明确要求 GB/T 7714—2025，不用 2015 版。西文个人责任者姓仅首字母大写，名用首字母且不加下点。预印本是 PP/OL。标准写编号和标准名称。</p></div>
+  <div class="box"><b>实验数字有来源</b><p>本方案引用的场景数、图像数、mAP@0.5 和相对基线的提高，都来自示例初稿。评估给出的 65 分是这一次文心阅读的输出，不是系统内置的固定分数。</p></div>
+  <div class="box"><b>待补不要填上</b><p>速度、资源占用、消融和失败案例，示例稿没有写。功能可以列出这些缺口，回复审稿意见时也把缺口标成待补。不能把模型的举例写进结果表。</p></div>
+  <div class="box gold"><b>建议留给作者定稿</b><p>扩写和润色给出的是可参考段落和改写对照。交上去的章节仍由学生自己确定。伦理声明只提示采集和脱敏是否需要说明，不代替作者作出许可承诺。</p></div>
+</div>
+<p>规范重合度若出现在评估结果中，只作为表述规范和原创性风险的提示。它不接入查重系统，不能在答辩或投稿材料里被称作重复率。</p>
+
+<h2><span class="k">15</span>用在培养环节里</h2>
+<p>论小研适合嵌进院系已经有的写作环节，而不是再加一套与课程无关的聊天入口。开题周用选题可行性、开题报告和进度任务书；初稿周用评估、大纲和润色；定稿周用参考文献、投稿适配和答辩模拟。同一次课程共用「当前论文」这一个概念，学生换功能时不用重新交稿。</p>
+<table>
+  <tr><th style="width:32mm">场合</th><th>老师或单位做什么</th><th>学生在论小研里做什么</th></tr>
+  <tr><td>写作工作坊</td><td>规定这一周只改实验或只改文献</td><td>上传当周稿子，跑评估和对应的那一个功能，带着建议回课堂</td></tr>
+  <tr><td>导师组会</td><td>看周报和遗留问题</td><td>用导师周报生成邮件标题和短文，用复盘列出还没改的项</td></tr>
+  <tr><td>答辩前一周</td><td>抽问创新点、对照和失败案例</td><td>用答辩模拟出题，用 PPT 大纲整理十二页页序和开场</td></tr>
+</table>
+<p>使用安排面向院系或培养环节，按单位组织，不按学生每一次对话单独计价。一键全流程会连续调用四次文心，适合作为一次完整诊断，不适合无目的地反复点击。界面上只说明功能本身，不写营销口号。</p>
+<div class="grid2">
+  <div class="box"><b>一次诊断的范围</b><p>全流程四次加上最后的合成报告，回答的是「这篇稿现在缺什么」。随后的修改仍回到单个功能，每次只解决一条，避免一份报告太长而没有人改。</p></div>
+  <div class="box gold"><b>换稿即换上下文</b><p>上传新文件会替换共用正文。字数和文件名跟着变。上一篇的评估不会自动混进下一篇，复盘需要的记录由学生从对应功能带回来。</p></div>
+</div>
+
+<h2><span class="k">16</span>八周里怎么改完这一篇</h2>
+<p>下面按一份毕业论文的八周来排，每周只强调一个缺口。学生每周上传当周的稿，顶栏字数会变，功能仍读这一份。老师在组会上对的是「待补清单」和复盘里的遗留项，而不是再听一遍题目介绍。</p>
+<table>
+  <tr><th style="width:14mm">周次</th><th style="width:42mm">打开的功能</th><th>这一周要留下的结果</th></tr>
+  <tr><td>第 1 周</td><td>上传，论文智能评估</td><td>整体评价、综合评分、优点和缺点。示例稿这一次是 65 分，缺点集中在实验不深和文献格式</td></tr>
+  <tr><td>第 2 周</td><td>选题可行性，开题报告</td><td>更窄的题目写法，以及大约十二周的进度。进度里不出现尚未测量的指标</td></tr>
+  <tr><td>第 3 周</td><td>文献综述，文献与大纲</td><td>按技术线重写的相关工作，五章大纲和三个研究问题。不再按年份罗列</td></tr>
+  <tr><td>第 4 周</td><td>实验设计，复现清单</td><td>对照、消融、失败案例和要留档的文件。速度与资源占用保持待补</td></tr>
+  <tr><td>第 5 周</td><td>章节扩写，初稿润色</td><td>可粘贴段落和改写对照。新段落不得写入 86.4% 以外的新精度</td></tr>
+  <tr><td>第 6 周</td><td>术语、公式、图表</td><td>一套缩写、指标定义和图注。mAP@0.5 的写法全稿一致</td></tr>
+  <tr><td>第 7 周</td><td>摘要与关键词，参考文献</td><td>中英文摘要、关键词，以及按 GB/T 7714—2025 整理的条目</td></tr>
+  <tr><td>第 8 周</td><td>投稿、审稿、答辩、周报、复盘</td><td>三项适配清单、模拟意见、十二页页序、百五十字周报，以及仍未改完的优先级</td></tr>
+</table>
+<p>智能论文助手可以插在任意一周：说到评估、大纲、润色、摘要、投稿或答辩，会先回答再进入对应功能。一键全流程适合第 1 周想先看完整诊断的人，不适合每一周都无目的地重跑四次。</p>
+<div class="grid2">
+  <div class="box"><b>组会上拿什么</b><p>拿评估里的缺点、实验设计里的待补项，或者复盘里的遗留问题。这三样都对着当前正文，导师不用先把稿子重读一遍才能提问。</p></div>
+  <div class="box gold"><b>换周要换稿</b><p>上传新版本会替换共用正文，文件名和字数一起更新。上一篇的评估不会自动混进新稿。复盘所需的记录，从评估和润色面板带回来。</p></div>
+</div>
+
+<h2><span class="k">17</span>参考文献要改的四类问题</h2>
+<p>示例初稿的文献问题不是「少引了某篇论文」，而是格式混用。参考文献整理固定为顺序编码制，并按 GB/T 7714—2025 改，明确不再使用 2015 版的写法。下面四类是这一功能要抓住的点。</p>
+<table>
+  <tr><th style="width:42mm">稿子里常见的样子</th><th>这一次调用要改成</th></tr>
+  <tr><td>预印本、arXiv 稿标成 [EB/OL]</td><td>改为 [PP/OL]。预印本不是普通网络文献</td></tr>
+  <tr><td>标准写成带出版社的旧格式</td><td>只保留标准编号和标准名称，中间用规范的连接号，不另加出版者</td></tr>
+  <tr><td>西文人名名在前，或缩写带下点</td><td>姓在前，仅首字母大写；名缩写为首字母，后面不加下点</td></tr>
+  <tr><td>同一篇里脚注、著者年和顺序编码混用</td><td>统一为顺序编码制，并给出哪些条目字段还不齐</td></tr>
+</table>
+<p>投稿适配在格式要求留空时，也会做一次 GB/T 7714—2025 的文献检查，并把它放进格式、内容侧重、结构这三项清单的第一项。学生若贴了期刊或学校模板，则按该模板对照，国标检查仍作为文献条目的底线。</p>
+<div class="box"><b>和评估结果怎么接上</b><p>这一次评估已经写到文献引用格式不够规范。第 7 周不要重新讨论「要不要改格式」，直接打开参考文献整理，让文心按当前正文里的条目改一版，再由学生核对字段是否残缺。模型补不上的卷期、页码，保持待补，不编一个看起来完整的出处。</p></div>
+
+<h2><span class="k">18</span>报名材料与使用地址</h2>
+<p>赛题要求作品在秒哒完成、能够打开，并在应用方案中写明搭建平台。论小研的平台是百度秒哒，阅读由文心完成。可运行页面如下。</p>
+<table>
+  <tr><th style="width:36mm">项目</th><th>内容</th></tr>
+  <tr><td>产品名称</td><td>论小研</td></tr>
+  <tr><td>搭建平台</td><td>百度秒哒。用自然语言搭成单页网页应用，功能切换不更换地址</td></tr>
+  <tr><td>大模型</td><td>文心。使用秒哒内置模型阅读正文，作品不单独部署权重，也不在页面中放置密钥</td></tr>
+  <tr><td>可运行地址</td><td>https://app-f0h51oxvcmip.miaoda.online/</td></tr>
+  <tr><td>作品在做什么</td><td>把论文评估、大纲、润色、摘要、投稿对照和答辩演练收进同一个对话，让学生围绕一篇稿子改完</td></tr>
+  <tr><td>本文件</td><td>应用方案。封面为产品首页，其后每一项功能配有该功能的界面，并写明这一次文心调用读什么、写出什么</td></tr>
+</table>
+<div class="steps">
+  <div class="step"><i>1</i><p><b>打开上面的地址。</b>看到「论文写作全流程工作台」和「上传论文」，即是本方案所描述的版本。</p></div>
+  <div class="step"><i>2</i><p><b>载入示例或上传自己的稿。</b>顶栏出现文件名和字数后，任意功能都读这一份。</p></div>
+  <div class="step"><i>3</i><p><b>先跑一次评估。</b>看整体评价、综合评分、优点和缺点，再决定进大纲、实验设计还是参考文献。</p></div>
+  <div class="step"><i>4</i><p><b>用对话跳到指定功能。</b>在智能论文助手输入评估、大纲、润色、摘要、投稿或答辩，回答之后会进入对应面板并再调用一次。</p></div>
+</div>
+<p class="note">示例稿的事实只保留这些：8 个校园场景，12400 张图像，YOLOv8 与 ByteTrack，mAP@0.5 = 86.4%，比基线高 4.7 个百分点，全文 3898 字。除此之外的精度、速度和资源数字，在没有写进稿子之前，一律是待补。</p>
+
+<h2><span class="k">19</span>交稿前再对一遍</h2>
+<p>终稿交出去之前，用下面六问对着当前这篇稿过一遍。哪一问答不上来，就回到对应功能再调用一次文心，而不是在结果里补一组没有做过的数字。</p>
+<div class="grid2">
+  <div class="box"><b>创新点是否写清</b><p>评估的缺点里如果还写着「创新表述笼统」，回到润色或扩写，把「具有较好的检测效果」改成这篇稿真正多出来的那一步。答辩模拟会就这一点追问。</p></div>
+  <div class="box"><b>实验缺了哪一组</b><p>实验设计清单上的对照、消融和失败案例，有数据的写进正文，没有数据的保持待补。不要把速度、帧率、显存写成已经测过。</p></div>
+  <div class="box"><b>文献是否还是旧写法</b><p>预印本应为 PP/OL，标准只留编号和名称，西文姓名按 GB/T 7714—2025。字段残缺就标待补，不编一个看起来完整的出处。</p></div>
+  <div class="box"><b>摘要和正文是否同一组数</b><p>中英文摘要里的指标必须和正文一致：8 个场景、12400 张图像、mAP@0.5 = 86.4%、高出基线 4.7 个百分点。符号不改成口语。</p></div>
+  <div class="box"><b>这一版比上一版多了什么</b><p>两稿对照和写作复盘用来回答这句话。复盘需要先有一次评估和一次润色。没有记录时，界面会提示先去做，不会凭空总结进步。</p></div>
+  <div class="box gold"><b>谁对终稿负责</b><p>论小研给出的是整体评价、优点、缺点和可执行建议。交上去的章节由学生自己确定。规范重合度不是查重结论，也不能写成重复率。</p></div>
+</div>
+<div class="lead">可运行地址　https://app-f0h51oxvcmip.miaoda.online/　·　百度秒哒搭建　·　文心阅读当前正文　·　产品名称：论小研</div>
+
+<h2><span class="k">20</span>方案里的图对应哪一个功能</h2>
+<p>封面和后面的功能图，都截自已经发布的论小研。截图前先载入《计算机专业本科毕业论文初稿》，顶栏为 3898 字。每张图对应该功能打开后的样子：标题、补充栏和按钮与正文里的名称一致。评估结果单独用了一次真实输出，综合评分 65 分，优点中的场景数、图像数和 mAP 都能回到示例稿，不另作修饰。</p>
+<table>
+  <tr><th style="width:28mm">在方案中的位置</th><th>图里能看到什么</th><th>和文心的关系</th></tr>
+  <tr><td>封面、首页</td><td>工作台、当前论文、上传论文、一键全流程</td><td>全流程在本页四次调用：评估、大纲、润色、参考文献</td></tr>
+  <tr><td>一次真实的评估</td><td>文心生成中、整体评价、65 分、优点和缺点开头</td><td>评审角色阅读这 3898 字之后的当次输出</td></tr>
+  <tr><td>基础功能</td><td>助手的快捷问题，以及评估、大纲、陪练、润色、摘要、参考文献的按钮</td><td>每个按钮一次调用，助手认到功能后会再调用一次</td></tr>
+  <tr><td>开题选题</td><td>拟题、开题报告、综述框架、进度任务书、专业与技能</td><td>额外栏接在共用正文后面，不替换正文</td></tr>
+  <tr><td>写作表达</td><td>待改写段落、章节、待翻译段落、第二版摘录、复盘前提示</td><td>复盘要先有评估记录和润色记录</td></tr>
+  <tr><td>规范与实验</td><td>缩写表、指标定义、图表规范、实验方案、复现清单、声明草稿</td><td>缺口写成待补，不生成稿子里没有的实验结果</td></tr>
+  <tr><td>答辩与投稿</td><td>格式要求、审稿风格、审稿意见、推荐、练习类别、PPT、周报</td><td>默认审稿风格是温和导师；答辩可出全部三类</td></tr>
+</table>
+<div class="grid2">
+  <div class="box"><b>图里的空结果区</b><p>多数功能图停在点击之前，结果区写着「文心大模型将结合当前论文正文与上方输入生成结果」。这是功能就绪的样子。真正写完的一例放在评估那一页，避免三十张图都贴上长文、正文反而看不见按钮。</p></div>
+  <div class="box gold"><b>图和稿子是同一篇</b><p>研究主题的示例、拟题的示例，都指向校园场景下的行人检测与轨迹分析。换一张自己的稿，顶栏文件名和字数会变，按钮和调用方式不变。</p></div>
+</div>
+
+<h2><span class="k">21</span>从一句话到一次调用</h2>
+<p>学生不一定从左侧栏开始。更常见的是在智能论文助手里说一句人话。助手先按对话角色回答，保留最近六轮；若这句话指向某个功能，再切到该面板，用该面板的角色把同一篇正文重新读一遍。下面是六句最常用的话，对应关系与界面上的按钮一致。</p>
+<table>
+  <tr><th>助手里说的话</th><th>切到的面板</th><th>面板上的按钮</th><th>这一次写出</th></tr>
+  <tr><td>帮我评估这篇论文</td><td>论文智能评估</td><td>开始评估</td><td>整体评价、综合评分、四项分项、优缺点</td></tr>
+  <tr><td>帮我列文献和大纲</td><td>文献与大纲</td><td>生成大纲</td><td>五章、八条文献建议、三个研究问题</td></tr>
+  <tr><td>这段话帮我润色</td><td>初稿润色分析</td><td>开始润色分析</td><td>语言、逻辑、学术表达和改写示例</td></tr>
+  <tr><td>按学校要求写摘要</td><td>摘要与关键词</td><td>生成摘要</td><td>中英文摘要和关键词，目标要求可先填上</td></tr>
+  <tr><td>对照期刊格式看看</td><td>投稿适配优化</td><td>开始适配分析</td><td>格式、侧重、结构；要求可空</td></tr>
+  <tr><td>答辩可能会问什么</td><td>答辩模拟</td><td>出题演练</td><td>题目、追问和参考回答，类别可选全部三类</td></tr>
+</table>
+<p>面板上的补充栏只属于这一次调用。研究主题、拟题、待改写段落、期刊要求、审稿意见、本周进展，都接在共用正文之后。学生下一次换功能时，这些栏不会变成新的正文。正文只在「上传论文」或「载入示例」时更换，顶栏同时更新文件名和字数。</p>
+<div class="grid2">
+  <div class="box"><b>陪练是两次，不是一次</b><p>实时写作陪练先点「给我出引导题」。学生把回答写进文本框再提交，导师角色才给点评和分数。没有作答的那一次，不会直接给出一个空的高分。</p></div>
+  <div class="box"><b>全流程是四次，仍在首页</b><p>「开始全流程」依次做评估、大纲、润色、参考文献，再把优化报告写在首页下方。它适合第一周看完整诊断。后面每一周改一个缺口，用单个功能即可，不必重跑四次。</p></div>
+  <div class="box"><b>上传失败留在当前窗口</b><p>docx 取文档中的文字，pdf 逐页取文字，txt 和 md 按文本读。旧版 doc 提示另存为 docx。抽不出文字时只说明原因，不新开页面，也不清掉已经载入的正文。</p></div>
+  <div class="box gold"><b>深色只改变看稿方式</b><p>顶栏可以切换深色，方便长时间对着同一篇稿修改。切换不改变正文，也不改变文心的角色。功能仍是这三十一个，调用方式不变。</p></div>
+</div>
+
+<h2><span class="k">22</span>五个分组各守一件事</h2>
+<p>三十一个功能不是三十种聊天。分组的意义是：学生知道这一周该守哪一条，文心也只按这一条的角色回答。换组不换稿。</p>
+<table>
+  <tr><th style="width:28mm">分组</th><th>这一组守住的事</th><th>不要让它做的事</th></tr>
+  <tr><td>基础功能</td><td>听懂问题，给出评分、大纲、陪练、润色、摘要和文献格式</td><td>不把六轮对话里的闲聊写进论文正文</td></tr>
+  <tr><td>开题选题</td><td>收窄题目，写出开题、综述框架、进度和三个月路径</td><td>不另起一个和当前实验无关的题目</td></tr>
+  <tr><td>写作表达</td><td>改句子、扩章节、翻译、对照两稿、复盘遗留问题</td><td>不用同义词替换冒充降重，不编新的实验数字</td></tr>
+  <tr><td>规范与实验</td><td>统一术语和指标，列出对照、消融、复现和声明</td><td>不把待补的速度、帧率、显存写成已经测过</td></tr>
+  <tr><td>答辩与投稿</td><td>对照格式、模拟审稿、回复意见、出答辩题、写周报</td><td>不把刊物推荐写在学位要求之前</td></tr>
+</table>
+<div class="grid2">
+  <div class="box"><b>先评估，再分散改</b><p>第 1 周的 65 分和缺点清单决定后面先动实验还是先动文献。没有这一次阅读，后面的功能仍能用，但学生不知道该先改哪一条。</p></div>
+  <div class="box"><b>一次只改一个缺口</b><p>大纲、润色、文献、答辩不要在同一小时里各跑一遍却都不改稿。改完再上传新版本，让下一次评估读到新的正文。</p></div>
+  <div class="box"><b>记录要自己带回去</b><p>复盘不会自动保存每一次点击。评估和润色的文字，由学生放回复盘的两个记录栏。没有记录时，界面会提示先去做。</p></div>
+  <div class="box gold"><b>地址就这一条</b><p>作品在百度秒哒发布。打开 https://app-f0h51oxvcmip.miaoda.online/ 即可看到本方案里的工作台。文心负责阅读，页面不放置密钥，也不单独部署模型权重。</p></div>
+</div>
+<p>用这一个地址即可走完本方案：载入示例或上传自己的 docx、pdf、txt、md，先看评估里的整体评价和缺点，再按八周的顺序进入大纲、实验、润色、文献和答辩。每一次点击都是文心阅读当前正文；稿子里没有的数字保持待补。交上去的终稿，仍由学生自己确定。</p>
+
+</body>
+</html>

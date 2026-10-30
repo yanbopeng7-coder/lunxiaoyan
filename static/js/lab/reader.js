@@ -225,18 +225,15 @@ export function renderReader(paper) {
     `<a class="toc-item lv${h.level}" href="#sec-${esc(encodeURIComponent(h.title))}" data-toc="${esc(h.title)}">${esc(h.title)}</a>`
   ).join('') || '<span class="muted">无标题树</span>';
 
-  const body = paras.map((p) => {
-    const withCites = linkCitations(p.en);
-    return `<div class="rd-para" data-para="${p.id}">
-      <div class="rd-en">${withCites}</div>
+  const rows = paras.map((p) => {
+    const pendingZh = p.zh.startsWith('〔待译〕');
+    const zhText = pendingZh ? p.zh.slice(4) : p.zh;
+    const badge = pendingZh ? '<span class="zh-badge">待译</span>' : '';
+    const cls = pendingZh ? 'rd-zh pending' : 'rd-zh';
+    return `<div class="rd-row" data-para="${p.id}">
+      <div class="rd-en">${linkCitations(p.en)}</div>
+      <div class="${cls}">${badge}${esc(zhText).replace(/\n/g, '<br>')}</div>
     </div>`;
-  }).join('');
-
-  const zhBody = paras.map((p) => {
-    const cls = p.zh.startsWith('〔待译〕') ? 'rd-zh pending' : 'rd-zh';
-    const text = p.zh.startsWith('〔待译〕') ? p.zh.slice(4) : p.zh;
-    const badge = p.zh.startsWith('〔待译〕') ? '<span class="zh-badge">待译</span>' : '';
-    return `<div class="rd-para" data-para="${p.id}"><div class="${cls}">${badge}${esc(text).replace(/\n/g, '<br>')}</div></div>`;
   }).join('');
 
   const refs = (paper.refs || []).map((r) =>
@@ -244,8 +241,8 @@ export function renderReader(paper) {
   ).join('') || '<div class="muted">无参考文献条目</div>';
 
   const hint = pending
-    ? `<p class="muted reader-hint">已对齐 ${paras.length} 段；其中 ${pending} 段离线未覆盖，保留英文并标「待译」。可点「模型补全中文」生成通顺译文（公式/专名仍保留英文）。</p>`
-    : `<p class="muted reader-hint">中文对照已按整句对齐；滚动左右栏自动同步；点击正文 [n] 可跳转参考文献。</p>`;
+    ? `<p class="muted reader-hint">左右同行一一对应，共 ${paras.length} 段；其中 ${pending} 段离线词库未覆盖（黄标「待译」）。点「模型补全中文」可生成通顺译文。演示论文请先到「文献库」点一键测例。</p>`
+    : `<p class="muted reader-hint">左右同行一一对应（同一行=同一段）；点击正文 [n] 跳转参考文献。</p>`;
 
   return {
     paras,
@@ -254,9 +251,9 @@ export function renderReader(paper) {
       ${hint}
       <div class="reader-layout">
         <aside class="reader-toc"><h4>标题树</h4>${tree}</aside>
-        <div class="reader-panes">
-          <div class="reader-col" id="readerEn"><h4>原文</h4><div class="reader-scroll" id="scrollEn">${body}</div></div>
-          <div class="reader-col" id="readerZh"><h4>中文对照</h4><div class="reader-scroll" id="scrollZh">${zhBody}</div></div>
+        <div class="reader-main">
+          <div class="reader-col-heads"><span>原文</span><span>中文对照</span></div>
+          <div class="reader-scroll" id="scrollPair">${rows}</div>
         </div>
         <aside class="reader-refs"><h4>References</h4><div id="refList">${refs}</div></aside>
       </div>`,
@@ -269,38 +266,8 @@ function linkCitations(text) {
     .replace(/\n/g, '<br>');
 }
 
-/** 按段落比例同步，比整页 scrollTop 比例更稳 */
-function syncByParagraph(from, to) {
-  const fromParas = [...from.querySelectorAll('.rd-para')];
-  const toParas = [...to.querySelectorAll('.rd-para')];
-  if (!fromParas.length || !toParas.length) return;
-  const top = from.scrollTop + 8;
-  let idx = 0;
-  for (let i = 0; i < fromParas.length; i++) {
-    if (fromParas[i].offsetTop <= top) idx = i;
-    else break;
-  }
-  const target = toParas[Math.min(idx, toParas.length - 1)];
-  if (target) {
-    to.scrollTop = Math.max(0, target.offsetTop - 8);
-  }
-}
-
 export function bindReaderInteractions(root) {
   if (!root) return;
-  const en = root.querySelector('#scrollEn');
-  const zh = root.querySelector('#scrollZh');
-  let lock = false;
-  function sync(from, to) {
-    if (!from || !to || lock) return;
-    lock = true;
-    syncByParagraph(from, to);
-    lock = false;
-  }
-  if (en && zh) {
-    en.addEventListener('scroll', () => sync(en, zh), { passive: true });
-    zh.addEventListener('scroll', () => sync(zh, en), { passive: true });
-  }
 
   root.querySelectorAll('.cite-ref').forEach((a) => {
     a.addEventListener('click', (e) => {
@@ -337,13 +304,8 @@ export function bindReaderInteractions(root) {
       const key = title.slice(0, 24);
       const target = [...root.querySelectorAll('.rd-en')].find((n) => n.textContent.includes(key));
       if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        const para = target.closest('.rd-para');
-        const id = para && para.getAttribute('data-para');
-        if (id && zh) {
-          const zhPara = zh.querySelector(`.rd-para[data-para="${id}"]`);
-          if (zhPara) zhPara.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        const row = target.closest('.rd-row');
+        (row || target).scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
   });
@@ -351,11 +313,9 @@ export function bindReaderInteractions(root) {
 
 export function jumpToCite(root, paperId, page) {
   if (!root) return;
-  const en = root.querySelector('#scrollEn');
-  if (!en) return;
-  const paras = en.querySelectorAll('.rd-para');
-  const idx = Math.min(paras.length - 1, Math.max(0, (Number(page) || 1) - 1));
-  if (paras[idx]) paras[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const rows = root.querySelectorAll('.rd-row');
+  const idx = Math.min(rows.length - 1, Math.max(0, (Number(page) || 1) - 1));
+  if (rows[idx]) rows[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 export function hoverTranslateSnippet(text) {
@@ -389,11 +349,20 @@ export async function fillPendingWithModel(paras, apiRun) {
   return paras;
 }
 
-export function renderZhColumn(paras) {
+/** 刷新成对行（模型补全后整表重绘，避免左右错位） */
+export function renderPairedRows(paras) {
   return paras.map((p) => {
     const pending = String(p.zh || '').startsWith('〔待译〕');
     const text = pending ? p.zh.slice(4) : p.zh;
     const badge = pending ? '<span class="zh-badge">待译</span>' : '';
-    return `<div class="rd-para" data-para="${p.id}"><div class="rd-zh${pending ? ' pending' : ''}">${badge}${esc(text).replace(/\n/g, '<br>')}</div></div>`;
+    return `<div class="rd-row" data-para="${p.id}">
+      <div class="rd-en">${linkCitations(p.en)}</div>
+      <div class="rd-zh${pending ? ' pending' : ''}">${badge}${esc(text).replace(/\n/g, '<br>')}</div>
+    </div>`;
   }).join('');
+}
+
+/** @deprecated 兼容旧调用名 */
+export function renderZhColumn(paras) {
+  return renderPairedRows(paras);
 }

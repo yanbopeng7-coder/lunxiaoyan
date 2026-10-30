@@ -9,7 +9,7 @@ import {
 import { answerQuestion, comparePapers, evidenceListHtml } from './lab/rag.js';
 import {
   renderReader, bindReaderInteractions, jumpToCite,
-  fillPendingWithModel, renderZhColumn,
+  fillPendingWithModel, renderPairedRows,
 } from './lab/reader.js';
 import {
   searchArxiv, filterQuality, drillDownRefs, recommendFromLibrary,
@@ -119,6 +119,54 @@ async function commitPaper(paper, duplicates) {
 }
 
 window.refreshLibraryList = refreshLibraryList;
+
+window.loadScanOcrDemo = async function () {
+  try {
+    toast('下载扫描件 PDF 并 OCR…');
+    const r = await fetch('static/demo/papers/attention-scan-ocr-demo.pdf', { cache: 'no-store' });
+    const blob = await r.blob();
+    const file = new File([blob], 'attention-scan-ocr-demo.pdf', { type: 'application/pdf' });
+    const parsed = await extractPdfText(file, {
+      maxOcrPages: 1,
+      onProgress: (p) => {
+        if (p.phase === 'ocr') toast('OCR ' + p.page + '/' + p.total);
+      },
+    });
+    const { paper, duplicates } = await ingestText(parsed.text, {
+      filename: file.name,
+      source: 'scan-ocr-demo',
+      ocrUsed: !!parsed.ocrUsed,
+      ocrNeeded: !!parsed.ocrNeeded,
+    });
+    paper.ocrUsed = !!parsed.ocrUsed;
+    paper.ocrNeeded = !!parsed.ocrNeeded;
+    await commitPaper(paper, duplicates);
+    setHtml('libDetail', structureReportHtml(paper) +
+      `<p class="muted">${esc(parsed.note || '')}</p><div class="pre" style="max-height:160px;overflow:auto">${esc((parsed.text || '').slice(0, 600))}</div>`);
+    await refreshLibraryList();
+    toast(parsed.ocrUsed ? '扫描件 OCR 入库完成' : (parsed.note || '已入库'));
+  } catch (e) {
+    toast('扫描 OCR 测例失败：' + (e.message || e));
+  }
+};
+
+window.loadLongBookDemo = async function () {
+  try {
+    toast('载入长文档节选（模拟 541 页分级切块）…');
+    const t = await fetch('static/demo/papers/understanding-dl-excerpt-long.txt', { cache: 'no-store' }).then((r) => r.text());
+    const { paper, duplicates } = await ingestText(t, {
+      filename: 'understanding-dl-excerpt-long.txt',
+      source: 'long-book-demo',
+    });
+    await commitPaper(paper, duplicates);
+    setHtml('libDetail', structureReportHtml(paper) +
+      `<p class="muted">合成长文约 ${t.length} 字 / ${(paper.chunks || []).length} chunks / ${(paper.pages || []).length} 分片，用于演示百页书的切块与索引，而非整本 541 页真书。</p>`);
+    await refreshLibraryList();
+    toast('长文档测例已入库');
+  } catch (e) {
+    toast('长文档测例失败：' + (e.message || e));
+  }
+};
 
 window.loadAttentionDemo = async function () {
   try {
@@ -255,10 +303,12 @@ function bindCiteClicks(root) {
 window._readerParas = null;
 
 window.openReader = async function (id) {
-  const papers = await listPapers();
+  let papers = await listPapers();
+  if (!papers.length) papers = await ensureDemoLibrary();
+  await refreshLibraryList();
   const pid = id || ($('readerSelect') && $('readerSelect').value) || window.LX_CURRENT_PAPER;
   const paper = papers.find((p) => p.id === pid) || papers[0];
-  if (!paper) { setHtml('readerRoot', '<p class="muted">请先入库文献</p>'); return; }
+  if (!paper) { setHtml('readerRoot', '<p class="muted">请先到「文献库」点一键测例或上传 PDF</p>'); return; }
   if ($('readerSelect')) $('readerSelect').value = paper.id;
   const view = renderReader(paper);
   window._readerParas = view.paras;
@@ -288,10 +338,10 @@ window.polishReaderZh = async function () {
   };
   try {
     await fillPendingWithModel(window._readerParas, apiRun);
-    const zh = document.querySelector('#scrollZh');
-    if (zh) zh.innerHTML = renderZhColumn(window._readerParas);
+    const pair = document.querySelector('#scrollPair');
+    if (pair) pair.innerHTML = renderPairedRows(window._readerParas);
     bindReaderInteractions($('readerRoot'));
-    toast('中文对照已更新');
+    toast('中文对照已更新（同行对齐）');
   } catch (e) {
     toast('模型翻译暂不可用，已保留离线整句译文：' + (e.message || e));
   }
@@ -368,9 +418,29 @@ window.runGraph = async function () {
   setHtml('graphOut', renderGraphSvg(graph) + '<div class="report">' + survey.html + '</div>');
 };
 
+/** 空库时自动塞入 Attention 测例，避免「只能自己上传、以前的没了」 */
+async function ensureDemoLibrary() {
+  const papers = await listPapers();
+  if (papers.length) return papers;
+  try {
+    toast('文献库为空，正在载入 Attention 演示论文…');
+    const { v1, v7 } = await loadDemoPair();
+    const r1 = await ingestText(v1, { filename: '1706.03762v1.txt', source: 'demo' });
+    await savePaper(r1.paper);
+    const r7 = await ingestText(v7, { filename: '1706.03762v7.txt', source: 'demo' });
+    // 空库无冲突，直接并存两版供去重演示时再点一键测例
+    await savePaper(r7.paper);
+    toast('已自动载入 Attention v1/v7 演示文献');
+  } catch (e) {
+    console.warn(e);
+  }
+  return listPapers();
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     await store.open();
+    await ensureDemoLibrary();
     await refreshLibraryList();
   } catch (e) {
     console.warn(e);

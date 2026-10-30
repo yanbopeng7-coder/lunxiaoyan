@@ -1,0 +1,15 @@
+[Unit]
+Description=论小研 Flask API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/lunxiaoyan
+EnvironmentFile=/opt/lunxiaoyan/.env
+ExecStart=/opt/lunxiaoyan/.venv/bin/python /opt/lunxiaoyan/app.py
+Restart=always
+RestartSec=5
+User=www-data
+
+[Install]
+WantedBy=multi-user.target

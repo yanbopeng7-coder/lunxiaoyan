@@ -2,7 +2,8 @@
 venv/
 __pycache__/
 *.pyc
-.env
+# 评委克隆可直接跑：按你的要求跟踪 .env（密钥会进公开仓库，用后建议轮换）
+# .env
 密钥配置-本地私密.txt
 密钥*.txt
 *私密*
@@ -14,3 +15,19 @@ data/history/*
 .idea/
 .vscode/
 .tools/
+# 本地调试截图/临时脚本，不进仓库
+_*/
+_*.png
+_*.py
+_*.txt
+_*.html
+_*.mjs
+@AutomationLog.txt
+_tools/
+_shots/
+_demo_frames/
+_tts/
+_tts_parts/
+_demo_check/
+*.wav
+.env
