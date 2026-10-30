@@ -31,3 +31,5 @@ _tts_parts/
 _demo_check/
 *.wav
 .env
+demo_audio/
+demo_frames/
