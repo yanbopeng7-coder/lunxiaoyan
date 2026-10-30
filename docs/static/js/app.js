@@ -32,7 +32,7 @@
     return location.protocol === "file:" || /github\.io$/i.test(h);
   }
   // GitHub Pages 不能直连智谱（CORS）。走公网 Flask API（隧道），密钥在服务端，评委免填。
-  var PUBLIC_API_BASE = (window.LX_API_BASE || "https://sheffield-jersey-railway-least.trycloudflare.com").replace(/\/$/, "");
+  var PUBLIC_API_BASE = (window.LX_API_BASE || "").replace(/\/$/, "");
   var _apiBaseReady = null;
   function apiBase() {
     if (!isStaticHost()) return "";
@@ -46,11 +46,7 @@
     return _apiBaseReady;
   }
   // 页面一打开就预热隧道，减少第一次点击的等待
-  if (typeof location !== "undefined" && /github\.io$/i.test(location.hostname || "")) {
-    setTimeout(function () {
-      fetch(PUBLIC_API_BASE + "/api/health").catch(function () {});
-    }, 300);
-  }
+  // 不预热任何外部地址：没有配置代理时不发无效请求
   // 密钥不进公开仓库：只读本机 localStorage；服务端用 .env / Worker Secret
   var BUILTIN_KEYS = { zhipu: "", groq: "" };
   var LIVE_MODELS = {

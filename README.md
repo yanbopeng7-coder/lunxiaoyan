@@ -1,80 +1,112 @@
-# 论小研 · AI 科研论文辅助平台
+# 论小研 · 科研助手 Agent
 
-本科/研究生论文写作辅助网页：评估、大纲、陪练、润色、摘要、国标文献、科研路径、投稿对照、审稿模拟与写作复盘。默认演示模式即可完整体验，配置国内大模型密钥后可切换为在线推理。
+面向科研全流程的静态优先 Agent：**PDF 解析与语义去重 → 带出处问答 → 双语阅读 → 检索追踪 → 引用图谱 → 写作与数据可视化**，同时保留原版 30+ 论文写作工具。
 
-## 启动
+- 在线演示：https://yanbopeng7-coder.github.io/lunxiaoyan/
+- 仓库：https://github.com/yanbopeng7-coder/lunxiaoyan
+- 运行形态：GitHub Pages 纯静态 + 可选 Flask 后端（本地或 Linux 服务器，用于在线模型与 arXiv API）
 
-双击 `启动论小研.bat`（或 `start.bat`）。脚本会自动找到本机 Python、启动服务并打开浏览器：
+> 默认不内置任何 API Key。核心六个模块可在浏览器内离线跑通；在线模型为可选增强。
 
-[http://127.0.0.1:8080](http://127.0.0.1:8080)
+## 一、功能模块
 
-**请保持弹出的黑色窗口不要关闭**，关掉后网页会无法访问。再次双击只会打开已有页面，不会重复启动。
+| 模块 | 能力 | 主要实现 |
+|---|---|---|
+| 意图编排中枢 | Task Planning、多工具调用、思考日志、计划/执行分离 | `docs/static/js/lab/agent.js`、`agent-ui.js` |
+| 文献库解析 | 批量 PDF 上传、SimHash 语义去重、v1/v7 版本提示、标题树/摘要/参考文献、Tesseract OCR、长文档分级加载 | `lab/library.js`、`static/vendor/pdf.min.js`、`assets/ocr` |
+| 抗幻觉问答 | BM25 稀疏检索、原文页/节锚点、证据不足拒答、多文对比 | `lab/rag.js` |
+| 沉浸阅读翻译 | 标题树导航、`[n]` ↔ References 双向跳转、中英对照、联动滚动 | `lab/reader.js` |
+| 检索追踪推荐 | arXiv 检索、参考文献下钻、GitHub 复现性优先、按本地库相关性排序 | `lab/retrieve.js`、Flask `/api/arxiv`（可选） |
+| 引用图谱综述 | PageRank 基石节点、边缘衍生识别、自动综述、Future Work 去旧提新 | `lab/graph.js` |
+| 写作与可视化 | 无幻觉论文框架、Mermaid/Graphviz/TikZ/Matplotlib 架构图、CSV 图表 + Figure Caption | `lab/writing.js`、`copilot-ui.js` |
 
-首次若缺依赖：
+## 二、快速开始
 
-```bash
-cd d:\lunxiaoyan
-d:\py\Anaconda3\python.exe -m pip install -r requirements.txt
-```
-
-未配置 API 时自动走本地演示，首页可一键载入演示用例《计算机专业本科毕业论文初稿.docx》。
-
-## GitHub Pages（给评委直接打开）
-
-GitHub Pages 只能托管静态网页，不能跑 Flask。本仓库已按[官方文档](https://docs.github.com/zh/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)准备两种发布方式：
-
-1. **从分支发布**：Settings → Pages → Build and deployment → Source 选 **Deploy from a branch**，Branch 选 `main`，文件夹选 `/docs`。
-2. **GitHub Actions**：同一页 Source 选 **GitHub Actions**，使用仓库里的 `.github/workflows/pages.yml`。
-
-生成 `docs/`：
+### 1. 纯静态（推荐评审直接打开）
 
 ```bash
-d:\py\Anaconda3\python.exe build_pages.py
+cd lunxiaoyan
+python -m http.server 8080
+# http://127.0.0.1:8080/docs/
 ```
 
-站点地址形如：`https://yanbopeng7-coder.github.io/lunxiaoyan/`
+无需安装依赖、无需密钥。文献库的 v1/v7 去重、RAG、阅读器、图谱、CSV 图表均在浏览器本地运行。
 
-评委打开 GitHub Pages 即可直接在线生成（不填密钥）。静态页会请求公网 API（本机 Flask + 隧道 / Cloudflare Worker），密钥只在服务端。本机需保持 `start_public_api.bat` 或已部署的 Worker 在线；若公网 API 暂不可用，会自动回退完整本地演示。
+### 2. 本地 Flask（需要在线模型时）
 
-docx/pdf 深度解析仍推荐本地 `启动论小研.bat`。`.env` 不会上传。
+```bash
+cp .env.example .env
+# 填入 ZHIPU_API_KEY / SILICONFLOW_API_KEY（.env 已被 .gitignore 忽略）
+pip install -r requirements.txt
+python app.py
+# http://127.0.0.1:8080
+```
 
-## 可选模型
+Flask 提供 `/api/llm`（服务端持钥，避免浏览器 CORS）和 `/api/arxiv`。静态页需要在线能力时，可在 `docs/index.html` 里设置：
 
-默认：**智谱清言 4-Flash**。下拉里每一项都请求对应模型，互不混用。
+```html
+<script>window.LX_API_BASE = "https://你的后端域名";</script>
+```
 
-通义千问 3.8-27B 和 GPT-OSS 120B 走 Groq。Pages 评委走服务端密钥，界面不显示密钥框。硅基流动的两个通义小模型仍要各自账号可用后才能调用。
+不设置则自动使用本地演示/浏览器端能力，不会发无效请求。
 
-本地 `启动论小研.bat` 读取 `.env` 里的 `ZHIPU_API_KEY`、`SILICONFLOW_API_KEY` 和 `GROQ_API_KEY`。
+### 3. Linux 服务器（评审期稳定在线）
 
-将 `.env.example` 复制为 `.env` 后填写对应密钥：
+见 [`deploy/linux/README.md`](deploy/linux/README.md)。要点：
+
+- Flask 用 systemd 常驻，密钥只放服务器 `.env`
+- 公网地址必须稳定：学校固定域名 + Nginx 反代，或 Cloudflare **Named Tunnel**
+- 不要把临时 `trycloudflare.com` 地址写进前端，隧道重启后会失效
+
+## 三、目录
+
+```
+├─ app.py / engine.py / extras.py   Flask 后端与写作工具引擎
+├─ templates/ static/               原版工作台源码
+├─ docs/                            GitHub Pages 发布目录
+│  └─ static/js/lab/                Agent 算法模块（浏览器端）
+├─ deploy/linux/                    systemd、启动脚本、部署说明
+├─ 论小研-科研Agent演示.mp4          演示视频（提交前替换为最终版）
+└─ requirements.txt / .env.example
+```
+
+## 四、测试用例
+
+| 用例 | 入口 |
+|---|---|
+| v7 先入库、v1 后上传 → 语义去重 + 版本提示 | 文献库 → 一键 Attention v1→v7 测例 |
+| 扫描件 OCR | 文献库 → 扫描件 OCR 测例 |
+| 长文档分级加载 | 文献库 → PDF 长文档分级加载测例 |
+| 单篇/多篇 RAG 问答 | 抗幻觉问答 |
+| 引用双向跳转 / 中英对照 | 沉浸阅读翻译 |
+| 16 篇局域图谱 + PageRank + 综述 | 引用图谱综述 → 载入 16 篇演示语料 |
+| CSV → 图表 + Caption + Matplotlib | CSV 数据可视化 → 载入演示 CSV |
+| 架构图脚本 | 架构拓扑图 → 生成 |
+
+详细实测记录见 [`TEST_REPORT.md`](TEST_REPORT.md)，评分对照见 [`RUBRIC.md`](RUBRIC.md)，架构说明见 [`ARCHITECTURE.md`](ARCHITECTURE.md)，演示脚本见 [`DEMO_SCRIPT.md`](DEMO_SCRIPT.md)。
+
+## 五、环境变量
+
+复制 `.env.example` 为 `.env`，只在本机/服务器填写：
 
 ```
 ZHIPU_API_KEY=
 SILICONFLOW_API_KEY=
 GROQ_API_KEY=
-DEEPSEEK_API_KEY=
-DASHSCOPE_API_KEY=
-MOONSHOT_API_KEY=
-BAIDU_API_KEY=
-BAIDU_SECRET_KEY=
-SPARK_API_KEY=
 ```
 
-实际会用到的是 `ZHIPU_API_KEY`、`SILICONFLOW_API_KEY` 和 `GROQ_API_KEY`。没填对应密钥时，那个模型会回退到本地示例。
+**任何真实 Key 都不得提交到公开仓库。** `.env` 已加入 `.gitignore`；如果曾经提交过，请轮换密钥并清理 Git 历史。
 
-## 页面
+## 六、已知边界
 
-1. 首页：功能入口、技术栈、数据看板、一键全流程
-2. 智能论文助手：写作 / 文献 / 科研指导 + 多轮对话
-3. 论文智能评估
-4. 个性化文献与大纲
-5. 实时写作陪练
-6. 初稿润色分析
-7. 摘要与关键词
-8. 参考文献格式化（演示默认 GB/T 7714—2025 顺序编码制）
-9. 科研路径规划
-10. 投稿适配优化
-11. 多风格审稿人模拟
-12. 论文写作复盘
+- 智谱接口不允许浏览器直连（CORS），静态页的在线智谱调用需要后端代理；硅基流动等支持 CORS 的接口可由用户自备 Key 直连。
+- OCR 默认只带英文 `eng.traineddata`；中文扫描件需追加 `chi_sim` 语言包。
+- arXiv 实时检索依赖后端 `/api/arxiv`；没有后端时回退内置演示条目。
+- 原版 30+ 写作工具保持不变，Agent 模块为新增页面。
 
-全局支持暗黑模式、模型切换、拖拽上传（docx / pdf / txt）、历史查看 / 复现 / 下载。
+## 七、团队信息
+
+- 参赛组别：`（填写）`
+- 成员：`（填写）`
+- 学校：`（填写）`
+- 联系方式：`（填写）`
