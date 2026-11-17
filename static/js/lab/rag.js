@@ -1,7 +1,7 @@
 /**
  * M2：抗幻觉 RAG + 多文对比（稀疏检索 + 出处锚点）
  */
-import { contentTokens, citeToken, mdToHtml, normalizeText, trimQuote, esc } from './core.js';
+import { contentTokens, citeToken, mdToHtml, trimQuote, esc, sourceBadge } from './core.js';
 
 function buildDf(papers) {
   const df = new Map();
@@ -58,65 +58,40 @@ export function retrieve(papers, question, { topK = 6, paperIds = null } = {}) {
   return scored.slice(0, topK);
 }
 
-function extractFactAnswer(question, evidence) {
-  const q = normalizeText(question);
-  const blob = evidence.map((e) => e.text).join('\n');
-
-  if (/beta_?1|β_?1|adam|optimizer|优化器/.test(q)) {
-    const m = blob.match(/beta_?\s*1\s*=\s*([0-9.]+)/i) || blob.match(/β_?\s*1\s*=\s*([0-9.]+)/i);
-    const m2 = blob.match(/beta_?\s*2\s*=\s*([0-9.]+)/i);
-    if (m) {
-      return `Adam 优化器设置：β₁=${m[1]}${m2 ? `，β₂=${m2[1]}` : ''}（见证据锚点）。`;
-    }
-  }
-  if (/gpu|p100|hardware|硬件|显卡/.test(q)) {
-    const m = blob.match(/(\d+)\s*NVIDIA\s*P100/i) || blob.match(/(\d+)\s*P100/i);
-    if (m) return `训练硬件：${m[1]} 块 NVIDIA P100 GPU（见证据锚点）。`;
-  }
-  if (/bleu|分数|score/.test(q)) {
-    const ms = [...blob.matchAll(/BLEU[^0-9]{0,20}([0-9.]+)/gi)].map((x) => x[1]);
-    if (ms.length) return `文中报告的 BLEU 包括：${[...new Set(ms)].slice(0, 4).join('、')}（见证据锚点）。`;
-  }
-  if (/author|作者|机构/.test(q)) {
-    const titles = evidence.map((e) => e.paperTitle).filter(Boolean);
-    return `相关论文：${[...new Set(titles)].join('；')}。作者信息请见文献库卡片（证据见锚点）。`;
-  }
-  if (/layer|层数|n\s*=\s*6|encoder/.test(q)) {
-    const m = blob.match(/N\s*=\s*(\d+)/);
-    if (m) return `Encoder/Decoder 堆叠层数 N=${m[1]}（见证据锚点）。`;
-  }
-
-  // 默认：用最高分证据句作答，严禁编造
-  const top = evidence[0];
-  if (!top) return null;
-  return `根据检索到的原文证据：${trimQuote(top.text, 220)}`;
-}
-
+/** 离线只展示检索摘录，不把正则抽出来的句子写成「回答」 */
 export function answerQuestion(papers, question, opts = {}) {
   const evidence = retrieve(papers, question, opts);
   if (!evidence.length) {
     return {
       ok: false,
-      answer: '证据不足：本地文献库中未检索到与问题匹配的原文片段，拒绝编造答案。请先入库相关 PDF/TXT，或换更具体的问题（如 β₁、P100、BLEU）。',
+      mode: 'offline',
+      answer: '',
       evidence: [],
-      markdown: '**证据不足** — 未返回答案。',
-      html: '<p><b>证据不足</b> — 未返回答案，避免幻觉。</p>',
+      markdown: '证据不足',
+      html: sourceBadge('offline') + '<p><b>证据不足</b> — 本地文献库没有匹配片段，拒绝编造答案。</p>',
     };
   }
-  const fact = extractFactAnswer(question, evidence);
-  const lines = [fact || '见下列证据。', '', '### 原文出处'];
+  const lines = ['离线检索摘录（BM25），不是模型回答。', '', '### 原文出处'];
   evidence.forEach((e, i) => {
     const tok = citeToken(e.paperId, e.page, e.section);
-    lines.push(`${i + 1}. ${tok} 《${e.paperTitle}》 p.${e.page} — ${trimQuote(e.text, 160)}`);
+    lines.push(`${i + 1}. ${tok} 《${e.paperTitle}》 p.${e.page} — ${trimQuote(e.text, 180)}`);
   });
   const markdown = lines.join('\n');
   return {
     ok: true,
-    answer: fact,
+    mode: 'offline',
+    answer: '',
     evidence,
     markdown,
-    html: mdToHtml(markdown),
+    html: sourceBadge('offline') + mdToHtml(markdown),
   };
+}
+
+export function ragModelPrompt(question, evidence) {
+  const bits = (evidence || []).slice(0, 5).map((e, i) =>
+    `[${i + 1}] 《${e.paperTitle}》 p.${e.page} ${e.section || ''}\n${trimQuote(e.text, 500)}`
+  ).join('\n\n');
+  return `只根据下面原文回答问题。原文里没有的数字、作者、指标一律写「证据不足」，不要编造。\n问题：${question}\n\n原文：\n${bits}`;
 }
 
 export function comparePapers(papers, paperIds) {
@@ -142,25 +117,8 @@ export function comparePapers(papers, paperIds) {
     });
   }
 
-  // 演进叙事（基于标题关键词，挂锚点）
-  const narrative = [];
-  const hasTransformer = selected.filter((p) => /attention is all you need|transformer/i.test(p.title + p.text.slice(0, 200)));
-  const hasBert = selected.filter((p) => /\bbert\b/i.test(p.title + p.abstract));
-  if (hasTransformer.length && hasBert.length) {
-    const t = hasTransformer[0];
-    const b = hasBert[0];
-    narrative.push(
-      `BERT 承袭 Transformer Encoder 的双向自注意力，但抛弃 Decoder 与生成式目标；对比见 ${citeToken(t.id, 1, 'Model')} 与 ${citeToken(b.id, 1, 'Abstract')}。`
-    );
-  }
-  if (selected.length >= 2) {
-    narrative.push(
-      `参数量/指标对比以各篇原文为准，下表只汇总可检索到的字段，未出现的字段标为 —，不编造。`
-    );
-  }
-
   let md = `## 多文对比（${selected.length} 篇）\n\n`;
-  narrative.forEach((n) => { md += `- ${n}\n`; });
+  md += `下表是从原文用字段匹配摘出的线索，空项为 —。这不是模型写的对比结论。\n\n`;
   md += '\n| 论文 | BLEU/指标线索 | 硬件线索 | Optimizer | 层数 |\n|---|---|---|---|---|\n';
   rows.forEach((r) => {
     md += `| ${r.title.slice(0, 40)} ${citeToken(r.id, 1, 'Abstract')} | ${r.bleu} | ${r.gpu} | ${r.beta} | ${r.layers} |\n`;
@@ -170,7 +128,7 @@ export function comparePapers(papers, paperIds) {
     md += `- ${citeToken(r.id, 1, 'Abstract')} ${r.abstract}\n`;
   });
 
-  return { ok: true, markdown: md, html: mdToHtml(md), rows };
+  return { ok: true, mode: 'offline', markdown: md, html: sourceBadge('offline') + mdToHtml(md), rows };
 }
 
 export function evidenceListHtml(evidence) {

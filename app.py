@@ -127,6 +127,8 @@ def api_arxiv():
     import requests as _req
 
     q = (request.args.get("q") or "").strip()
+    year = (request.args.get("year") or "").strip()
+    cat = (request.args.get("cat") or "").strip()
     max_results = min(int(request.args.get("max") or 8), 20)
     if not q:
         return _json({"ok": False, "error": u"缺少 q", "items": []}, 400)
@@ -136,9 +138,14 @@ def api_arxiv():
     else:
         from urllib.parse import quote
 
+        clauses = ["all:" + quote(q)]
+        if re.match(r"^[A-Za-z]{2}\.[A-Za-z]{2}$", cat):
+            clauses.append("cat:" + cat)
+        if re.match(r"^\d{4}$", year):
+            clauses.append("submittedDate:[%s01010000 TO %s12312359]" % (year, year))
         url = (
-            "http://export.arxiv.org/api/query?search_query=all:%s&start=0&max_results=%s"
-            % (quote(q), max_results)
+            "http://export.arxiv.org/api/query?search_query=%s&start=0&max_results=%s"
+            % ("+AND+".join(clauses), max_results)
         )
     try:
         resp = _req.get(url, timeout=25)

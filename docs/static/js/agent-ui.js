@@ -1,12 +1,12 @@
 /**
  * 科研 Agent UI：M1–M5 页面接线
  */
-import { store, toast as coreToast, esc } from './lab/core.js';
+import { store, toast as coreToast, esc, sourceBadge } from './lab/core.js';
 import {
   ingestText, extractPdfText, listPapers, savePaper, deletePaper,
   loadDemoPair, renderPaperCard, structureReportHtml, getPaper, findDuplicates,
 } from './lab/library.js';
-import { answerQuestion, comparePapers, evidenceListHtml } from './lab/rag.js';
+import { answerQuestion, comparePapers, evidenceListHtml, ragModelPrompt } from './lab/rag.js';
 import {
   renderReader, bindReaderInteractions, jumpToCite,
   fillPendingWithModel, renderPairedRows,
@@ -83,8 +83,13 @@ async function confirmDedup(paper, duplicates) {
     wrap.innerHTML = `
       <div class="dedup-box">
         <h3>语义去重预警</h3>
-        <p>新文献与库中《${esc(other.title)}》高度重合（相似度 ${(top.score * 100).toFixed(1)}%）
+        <p>${sourceBadge('offline')} 指纹去重（不是模型打分）。与库中《${esc(other.title)}》重合
           ${top.sameArxiv ? '，且 arXiv 编号相同（版本演进）' : ''}。</p>
+        <ul>
+          <li>SimHash 相似度 ${((top.simhash || 0) * 100).toFixed(1)}%（汉明距离 ${top.hamming ?? '—'} / 64）</li>
+          <li>MinHash Jaccard ${((top.minhash || 0) * 100).toFixed(1)}%</li>
+          <li>判定分取二者较高值 ${((top.score || 0) * 100).toFixed(1)}%，阈值 72%</li>
+        </ul>
         <p><b>建议：</b>${top.newerIsIncoming ? '库中已有较旧版本，建议保留/覆盖为较新版本。' : '库中版本可能更新，建议保留现有版本。'}</p>
         <ul>${(top.diffSummary || []).map((d) => `<li>${esc(d)}</li>`).join('')}</ul>
         <div class="row">
@@ -222,9 +227,14 @@ window.ingestLibFile = async function () {
   await refreshLibraryList();
 };
 
+function agentAuto() {
+  const box = $('agentAutoPlan');
+  return !box || box.checked;
+}
+
 window.previewAgentPlan = function () {
   const goal = (($('agentGoal') && $('agentGoal').value) || '全流程科研演示').trim();
-  const steps = planTasks(goal);
+  const steps = planTasks(goal, { auto: agentAuto() });
   setHtml('agentPlan', renderPlanHtml(steps));
   setHtml('agentThoughts', '<p class="muted">点击「执行编排」开始；思考过程将流式显示。</p>');
   setHtml('agentResult', '');
@@ -232,11 +242,12 @@ window.previewAgentPlan = function () {
 
 window.runResearchAgent = async function () {
   const goal = (($('agentGoal') && $('agentGoal').value) || '全流程科研演示').trim();
-  setHtml('agentPlan', renderPlanHtml(planTasks(goal)));
+  setHtml('agentPlan', renderPlanHtml(planTasks(goal, { auto: agentAuto() })));
   setHtml('agentThoughts', '');
   setHtml('agentResult', '<p class="muted">Agent 执行中…</p>');
   toast('Agent 开始编排');
   const out = await runAgent(goal, {
+    autoPlan: agentAuto(),
     question: ($('agentQuestion') && $('agentQuestion').value) || '',
     retrieveQuery: ($('agentRetrieve') && $('agentRetrieve').value) || 'transformer',
     idea: ($('agentIdea') && $('agentIdea').value) || '',
@@ -265,15 +276,37 @@ window.ingestLibPaste = async function () {
   await refreshLibraryList();
 };
 
+async function modelText(prompt) {
+  if (typeof window.api !== 'function') return '';
+  try {
+    const d = await window.api('chat', { question: prompt, scene: 'lit' }, prompt, 'rag.txt');
+    const offline = !d || d.demo || d.mode === 'demo' || d.mode === 'offline' || d.mode === 'pages';
+    if (offline) return '';
+    return String(d.reply || d.llm_text || '').trim();
+  } catch (e) {
+    return '';
+  }
+}
+
 window.runRagAsk = async function () {
   const q = (($('ragQuestion') && $('ragQuestion').value) || '').trim();
   if (!q) { toast('请输入问题'); return; }
   const papers = await listPapers();
   const ids = [...document.querySelectorAll('.rag-pick:checked')].map((x) => x.value);
   const res = answerQuestion(papers, q, { paperIds: ids.length ? ids : null, topK: 6 });
-  setHtml('ragOut', res.html + evidenceListHtml(res.evidence));
+  if (!res.ok) {
+    setHtml('ragOut', res.html);
+    toast('证据不足，已拒答');
+    return;
+  }
+  toast('正在请求模型（失败则只保留检索摘录）…');
+  const gen = await modelText(ragModelPrompt(q, res.evidence));
+  const head = gen
+    ? sourceBadge('model') + `<div class="report"><p>${esc(gen).replace(/\n/g, '<br>')}</p></div>`
+    : res.html;
+  setHtml('ragOut', head + evidenceListHtml(res.evidence));
   bindCiteClicks($('ragOut'));
-  toast(res.ok ? '已生成带出处回答' : '证据不足，已拒答');
+  toast(gen ? '模型已根据原文作答' : '模型不可用，仅显示离线检索摘录');
 };
 
 window.runRagCompare = async function () {
@@ -281,7 +314,12 @@ window.runRagCompare = async function () {
   const ids = [...document.querySelectorAll('.rag-pick:checked, .cmp-pick:checked')].map((x) => x.value);
   const picked = ids.length ? ids : [...document.querySelectorAll('.rag-pick:checked')].map((x) => x.value);
   const res = comparePapers(papers, picked);
-  setHtml('ragOut', res.html);
+  let html = res.html;
+  if (res.ok && res.markdown) {
+    const gen = await modelText('只根据下面摘录表写一段对比，表里是 — 的项不要编造数字。\n\n' + res.markdown);
+    if (gen) html = sourceBadge('model') + `<div class="report"><p>${esc(gen).replace(/\n/g, '<br>')}</p></div>` + res.html;
+  }
+  setHtml('ragOut', html);
   bindCiteClicks($('ragOut'));
 };
 
@@ -341,7 +379,9 @@ window.polishReaderZh = async function () {
     const pair = document.querySelector('#scrollPair');
     if (pair) pair.innerHTML = renderPairedRows(window._readerParas);
     bindReaderInteractions($('readerRoot'));
-    toast('中文对照已更新（同行对齐）');
+    const hint = document.querySelector('.reader-hint');
+    if (hint) hint.innerHTML = sourceBadge('model') + ' 已用模型补全待译段落；未改动的句子仍是离线对照。';
+    toast('中文对照已更新（模型生成）');
   } catch (e) {
     toast('模型翻译暂不可用，已保留离线整句译文：' + (e.message || e));
   }
@@ -349,9 +389,11 @@ window.polishReaderZh = async function () {
 
 window.runArxivSearch = async function () {
   const q = (($('arxivQ') && $('arxivQ').value) || '').trim();
-  const res = await searchArxiv(q, { max: 8 });
+  const year = (($('arxivYear') && $('arxivYear').value) || '').trim();
+  const cat = (($('arxivCat') && $('arxivCat').value) || '').trim();
+  const res = await searchArxiv(q, { max: 8, year, cat });
   const items = filterQuality(res.items);
-  setHtml('arxivOut', (res.offline ? '<p class="muted">离线演示结果（Flask /api/arxiv 不可用时回退）</p>' : '') + renderSearchResults(items));
+  setHtml('arxivOut', (res.offline ? sourceBadge('offline') + '<p class="muted">arXiv 接口不可用，下列为本地样例，不是实时检索。</p>' : sourceBadge('model') + '<p class="muted">来自 arXiv 接口的检索结果。</p>') + renderSearchResults(items));
   bindIngestButtons($('arxivOut'));
 };
 
@@ -388,6 +430,29 @@ function bindIngestButtons(root) {
   });
 }
 
+window.verifyFrameworkRefs = async function () {
+  const raw = (($('fwPapers') && $('fwPapers').value) || '').trim();
+  const lines = raw.split(/\n/).map((s) => s.trim()).filter(Boolean);
+  if (!lines.length) { toast('请先粘贴参考文献，每行一条'); return; }
+  const papers = await listPapers();
+  const rows = lines.map((line) => {
+    const arxiv = (line.match(/\d{4}\.\d{4,5}/) || [])[0] || '';
+    const low = line.toLowerCase();
+    const hit = papers.find((p) => {
+      const t = String(p.title || '').trim();
+      return t.length > 8 && low.includes(t.slice(0, 24).toLowerCase());
+    });
+    let status = '本地库未命中，不能当成已核实文献';
+    if (hit) status = '本地库可核验：《' + hit.title + '》';
+    else if (arxiv) status = '含 arXiv 号 ' + arxiv + '，尚未入库核对全文';
+    return `<li>${esc(line.slice(0, 120))}<br><span class="muted">${esc(status)}</span></li>`;
+  });
+  const box = $('fwOut');
+  const html = sourceBadge('offline') + '<h4>参考文献真实性</h4><p class="muted">对照本地文献库标题，不是模型判断。</p><ul>' + rows.join('') + '</ul>';
+  if (box) box.innerHTML = html;
+  toast('已完成文献校验');
+};
+
 window.runRecommend = async function () {
   const papers = await listPapers();
   const recs = recommendFromLibrary(papers, feedback);
@@ -415,7 +480,7 @@ window.runGraph = async function () {
   }
   const graph = buildCitationGraph(papers);
   const survey = generateSurvey(graph, papers);
-  setHtml('graphOut', renderGraphSvg(graph) + '<div class="report">' + survey.html + '</div>');
+  setHtml('graphOut', sourceBadge('offline') + renderGraphSvg(graph) + '<div class="report">' + survey.html + '</div><p class="muted">PageRank 与综述提纲由本地图算法生成，不是大模型写的。</p>');
 };
 
 /** 空库时自动塞入 Attention 测例，避免「只能自己上传、以前的没了」 */

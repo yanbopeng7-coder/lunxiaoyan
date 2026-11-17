@@ -2,7 +2,7 @@
  * M3：版式感知阅读 + 引用双向跳转 + 中英对照联动滚动
  * 翻译策略：整句/短语映射（禁止单词插替导致中英混杂）；未知段保留英文并标〔待译〕；可调模型补全。
  */
-import { esc, trimQuote } from './core.js';
+import { esc, trimQuote, sourceBadge } from './core.js';
 
 /** 先长后短：整句 / 固定短语 → 完整中文 */
 const PHRASES = [
@@ -241,8 +241,8 @@ export function renderReader(paper) {
   ).join('') || '<div class="muted">无参考文献条目</div>';
 
   const hint = pending
-    ? `<p class="muted reader-hint">左右同行一一对应，共 ${paras.length} 段；其中 ${pending} 段离线词库未覆盖（黄标「待译」）。点「模型补全中文」可生成通顺译文。演示论文请先到「文献库」点一键测例。</p>`
-    : `<p class="muted reader-hint">左右同行一一对应（同一行=同一段）；点击正文 [n] 跳转参考文献。</p>`;
+    ? `<p class="muted reader-hint">${sourceBadge('offline')} 左右同行对应，共 ${paras.length} 段；其中 ${pending} 段没有整句译文（黄标「待译」），不是模型翻译。点「模型补全中文」才会调用大模型。</p>`
+    : `<p class="muted reader-hint">${sourceBadge('offline')} 左右同行对应。当前中文来自本地整句对照表，不是模型生成。</p>`;
 
   return {
     paras,

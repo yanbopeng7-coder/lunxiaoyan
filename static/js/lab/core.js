@@ -7,6 +7,12 @@ export function esc(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+
+/** 界面必须标明结果来源，避免离线规则看起来像模型推理 */
+export function sourceBadge(kind) {
+  if (kind === 'model') return '<span class="src-badge model">模型生成</span>';
+  return '<span class="src-badge offline">离线推断</span>';
+}
 export function uid(prefix = '') {
   return prefix + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
 }

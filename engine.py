@@ -369,24 +369,11 @@ def _guess_topic(text, filename):
 
 
 def demo_evaluate(text, filename, model_id):
-    demo = _is_demo_thesis(filename, text)
-    score = 72 if demo else _stable(text, 64, 82)
-    overlap = 11.2 if demo else round(6.5 + _stable(text, 0, 90) / 10.0, 1)
     topic = _guess_topic(text, filename)
     return {
-        "mode": "demo",
+        "mode": "offline",
         "source": filename or u"未命名文稿",
         "topic": topic,
-        "score": score,
-        "overlap": overlap,
-        "dimensions": {
-            u"选题价值": 80 if demo else _stable(text + "a", 70, 88),
-            u"结构完整": 74 if demo else _stable(text + "b", 68, 86),
-            u"方法创新": 66 if demo else _stable(text + "c", 58, 80),
-            u"实验充分": 70 if demo else _stable(text + "d", 60, 84),
-            u"文献综述": 78 if demo else _stable(text + "e", 65, 88),
-            u"学术规范": 61 if demo else _stable(text + "f", 55, 82),
-        },
         "strengths": [
             u"研究思路清晰，检测—跟踪—分析流水线完整，问题来源贴合智慧校园场景。",
             u"实验数据相对完整，包含多场景自建数据与 mAP、FPS 等核心指标。",
@@ -402,9 +389,9 @@ def demo_evaluate(text, filename, model_id):
             u"补充消融实验（数据增强、跟踪器、输入尺度）与至少一组 SOTA 对比。",
             u"按 GB/T 7714—2025 顺序编码制统一参考文献，并核对每条必要字段。",
         ],
-        "summary": u"文稿《%s》综合评分 %s / 100，学术规范重合度约 %s%%（用于提示表述规范与原创性，不替代正式查重）。建议优先补强创新点论证、实验对比与参考文献格式。"
-        % (filename or topic, score, overlap),
-        "model": model_name(model_id),
+        "summary": u"文稿《%s》的下列意见是离线检查清单，不是模型打分，也不给综合分。建议优先补强创新点论证、实验对比与参考文献格式。"
+        % (filename or topic,),
+        "model": "",
     }
 
 
@@ -474,13 +461,11 @@ def demo_outline(topic, text, model_id):
 def demo_coach(chapter, answer, model_id):
     chapter = chapter or u"绪论 / 创新点"
     has_ans = bool((answer or "").strip())
-    score = 8.2 if has_ans and len(answer) > 80 else (6.4 if has_ans else None)
     return {
-        "mode": "demo",
+        "mode": "offline",
         "chapter": chapter,
         "prompt": u"请阐述本研究的核心创新点与现有方案的差异。要求：1）点明场景约束；2）说明方法组合而非口号；3）用一句可检验的实验预期收束。",
         "reference": u"与直接部署通用 YOLOv8 不同，本文面向校园监控的逆光与远距离小目标，设计了针对行人尺度的多尺度增强，并将 ByteTrack 的低分框关联引入门口与走廊高遮挡场景，使轨迹中断率下降。该差异将通过与 YOLOv8n+DeepSORT 的 ID Switch 对比加以验证，而不是仅比较 mAP。",
-        "score": score,
         "strengths": [
             u"能够把问题落到校园场景，而不是复述算法名词。",
             u"尝试同时覆盖检测与跟踪，方向正确。",
@@ -500,12 +485,9 @@ def demo_coach(chapter, answer, model_id):
 
 
 def demo_polish(text, filename, model_id):
-    demo = _is_demo_thesis(filename, text)
-    score = 7.1 if demo else round(_stable(text, 60, 85) / 10.0, 1)
     return {
-        "mode": "demo",
+        "mode": "offline",
         "source": filename or u"论文初稿",
-        "score": score,
         "logic": u"中等偏上：章节顺序完整，但段内常见“本文提出…从而…”空转句，讨论未回应实验数字。",
         "highlights": [
             u"技术主线清楚，检测与跟踪任务边界明确。",

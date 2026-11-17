@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=39" />
+  <link rel="stylesheet" href="static/css/style.css?v=41" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -180,6 +180,7 @@
           <label class="muted">写作 idea（可选）</label>
           <input id="agentIdea" type="text" value="occlusion-aware campus pedestrian detection" style="width:100%" />
           <div class="row" style="margin-top:10px">
+            <label class="check"><input id="agentAutoPlan" type="checkbox" checked /> 自主规划（意图识别后拆成多步工具；关闭则只做抗幻觉问答）</label>
             <button class="btn ghost" type="button" onclick="previewAgentPlan()">只生成计划</button>
             <button class="btn gold" type="button" onclick="runResearchAgent()">执行编排</button>
           </div>
@@ -239,6 +240,14 @@
         <div class="card">
           <div class="row">
             <input id="arxivQ" type="text" placeholder="检索词或 arXiv id，如 transformer / 1706.03762" style="flex:1;min-width:200px" />
+            <input id="arxivYear" type="text" placeholder="年份 2017" style="width:110px" />
+            <select id="arxivCat">
+              <option value="">分类不限</option>
+              <option value="cs.CL">cs.CL</option>
+              <option value="cs.LG">cs.LG</option>
+              <option value="cs.CV">cs.CV</option>
+              <option value="cs.AI">cs.AI</option>
+            </select>
             <button class="btn" type="button" onclick="runArxivSearch()">检索</button>
             <button class="btn ghost" type="button" onclick="runRecommend()">基于本地库推荐</button>
           </div>
@@ -439,7 +448,10 @@
           <textarea id="fwIdea" placeholder="例如：校园监控中的小目标行人检测与遮挡跟踪"></textarea>
           <label style="margin-top:10px;display:block">真实文献条目（每行一条，可含作者/年份/题名）</label>
           <textarea id="fwPapers" placeholder="Vaswani et al. Attention Is All You Need. NeurIPS, 2017.&#10;Redmon J, Farhadi A. YOLOv3: An Incremental Improvement. arXiv, 2018."></textarea>
-          <button class="btn" type="button" onclick="runFramework()">生成无幻觉框架</button>
+          <div class="row">
+            <button class="btn" type="button" onclick="runFramework()">生成无幻觉框架</button>
+            <button class="btn ghost" type="button" onclick="verifyFrameworkRefs()">校验参考文献是否真实</button>
+          </div>
           <div class="report" id="fwOut"></div>
         </div>
       </section>
@@ -590,9 +602,9 @@
   <script src="static/vendor/fflate.min.js?v=23"></script>
   <script src="static/vendor/pdf.min.js?v=23"></script>
   <script src="static/js/readfile.js?v=23"></script>
-  <script src="static/js/pages-demo.js?v=39"></script>
-  <script src="static/js/app.js?v=40"></script>
-  <script type="module" src="static/js/copilot-ui.js?v=39"></script>
-  <script type="module" src="static/js/agent-ui.js?v=39"></script>
+  <script src="static/js/pages-demo.js?v=41"></script>
+  <script src="static/js/app.js?v=41"></script>
+  <script type="module" src="static/js/copilot-ui.js?v=41"></script>
+  <script type="module" src="static/js/agent-ui.js?v=41"></script>
 </body>
 </html>

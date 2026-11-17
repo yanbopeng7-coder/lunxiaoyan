@@ -10,7 +10,16 @@ import { buildOutline, diagramFromIdea, toMermaid } from './writing.js';
 import { esc, uid, sleep } from './core.js';
 
 /** 意图 → 工具链规划 */
-export function planTasks(goal) {
+export function planTasks(goal, opts = {}) {
+  if (opts.auto === false) {
+    return [{
+      id: 'rag',
+      title: '抗幻觉问答',
+      tool: 'rag.ask',
+      why: '未开启自主规划，只回答当前问题，不展开全流程',
+      status: 'pending',
+    }];
+  }
   const g = String(goal || '').toLowerCase();
   const steps = [];
   const push = (id, title, tool, why) => steps.push({ id, title, tool, why, status: 'pending' });
@@ -63,13 +72,14 @@ async function runTool(step, ctx, onThink) {
       const r7 = await ingestText(v7, { filename: '1706.03762v7.txt', source: 'agent' });
       const dups = findDuplicates(r7.paper, papers);
       await think(dups.length
-        ? `检测到语义重复（相似度 ${(dups[0].score * 100).toFixed(1)}%），建议保留较新版本`
+        ? `SimHash ${((dups[0].simhash || 0) * 100).toFixed(1)}% / MinHash ${((dups[0].minhash || 0) * 100).toFixed(1)}%（离线指纹，非模型分）`
         : '未检出重复（将直接入库 v7）');
       if (dups.length) {
         await savePaper(r7.paper); // 演示：保留两者
         return {
           ok: true,
-          summary: `去重预警已触发：v1↔v7 相似度 ${(dups[0].score * 100).toFixed(1)}%。差异：${(dups[0].diffSummary || []).slice(0, 2).join('；')}`,
+          mode: 'offline',
+          summary: `去重（离线推断）：SimHash ${((dups[0].simhash || 0) * 100).toFixed(1)}%，MinHash ${((dups[0].minhash || 0) * 100).toFixed(1)}%。差异：${(dups[0].diffSummary || []).slice(0, 2).join('；')}`,
           data: { dups, v7: r7.paper },
         };
       }
@@ -167,7 +177,7 @@ export async function runAgent(goal, opts = {}) {
     retrieveQuery: opts.retrieveQuery,
     idea: opts.idea,
   };
-  const steps = planTasks(goal);
+  const steps = planTasks(goal, { auto: opts.autoPlan !== false });
   const thoughts = [];
   const results = [];
 

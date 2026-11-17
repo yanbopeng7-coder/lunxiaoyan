@@ -29,7 +29,7 @@
     return "待定研究题目";
   }
   function pack(sections, more) {
-    var d = { ok: true, demo: false, mode: "pages", model: modelName(), sections: sections || [] };
+    var d = { ok: true, demo: true, mode: "offline", source: "offline", model: "", sections: sections || [] };
     if (more) {
       for (var k in more) d[k] = more[k];
     }
@@ -81,7 +81,7 @@
       if (/摘要/.test(q)) reply = "摘要按五句写：问题、方法、数据、主要指标、局限。不要出现「意义重大」。";
       if (/文献/.test(q)) reply = "文献按技术线分组，每组用「共识—分歧—空白—本文位置」收束。";
       if (/答辩/.test(q)) reply = "答辩先准备创新点、对照实验、失败案例、隐私与工作量四类问题，各准备 40 秒口头答案。";
-      return { ok: true, demo: false, mode: "pages", model: modelName(), reply: reply };
+      return { ok: true, demo: true, mode: "offline", source: "offline", model: "", reply: reply };
     }
     if (action === "rewrite") return rewrite(src);
     if (action === "evaluate") {
@@ -90,7 +90,7 @@
         { title: "优点", items: ["问题意识清楚", "有方法与实验章节雏形"] },
         { title: "不足", items: ["创新点偏「结合现有方法」", "实验缺消融", "文献格式不统一"] },
         { title: "改进建议", items: ["摘要改成问题-方法-数据-指标-局限", "跟踪单独报 IDF1/IDS", "按 GB/T 7714 整理文献"] }
-      ], { score: 74, overlap: 9.6, summary: clip(text, 120) });
+      ], { summary: clip(text, 120) });
     }
     if (action === "outline") {
       return pack([
@@ -110,7 +110,7 @@
       return pack([
         { title: "语言判断", p: "学术表达基本通顺，空泛背景句偏多。" },
         { title: "可改方向", items: ["段首给判断", "指标写全称后用缩写", "少用「较好」「一定的」"] }
-      ], { score: 7.2 });
+      ]);
     }
     if (action === "abstract") {
       return pack([
@@ -145,7 +145,7 @@
         { title: "润色方向", items: ["删空泛时代背景，直接写约束", "指标先写全称再缩写", "结论改成可引用的定量句"] },
         { title: "4. 参考文献", items: ["统一 GB/T 7714—2025 顺序编码制", "西文姓仅首字母大写，名缩写不加下点", "预印本用 [PP/OL]，不要标成 [EB/OL]", "核对文内引用与文末编号一一对应"] },
         { title: "5. 完整优化报告·优先修改", items: ["P0 重写摘要与贡献条目，并补对照/消融表", "P1 统一国标文献并补近两年相关工作", "P2 增加失败案例、隐私处理与局限说明"] }
-      ], { score: 74, overlap: 9.6 });
+      ]);
     }
     if (action === "submit") {
       return pack([
@@ -171,9 +171,9 @@
     }
     if (action === "topic") {
       return pack([
-        { title: "可行性结论", p: "题目「" + topic + "」可做，建议收窄场景与指标，避免做成系统说明书。综合可行度 78/100。" },
+        { title: "可行性结论", p: "题目「" + topic + "」可做，建议收窄场景与指标，避免做成系统说明书。未连接模型，不给出数值评分。" },
         { title: "建议写法", items: ["面向具体场景的方法研究", "轻量系统的设计与实现", "某项指标改进的实验研究"] }
-      ], { score: 78 });
+      ]);
     }
     if (action === "proposal") {
       return pack([

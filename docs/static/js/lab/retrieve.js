@@ -9,10 +9,10 @@ function apiBase() {
   return '';
 }
 
-export async function searchArxiv(query, { max = 8 } = {}) {
+export async function searchArxiv(query, { max = 8, year = '', cat = '' } = {}) {
   const q = String(query || '').trim();
   if (!q) return { ok: false, error: '请输入检索词', items: [] };
-  const url = `${apiBase()}/api/arxiv?q=${encodeURIComponent(q)}&max=${max}`;
+  const url = `${apiBase()}/api/arxiv?q=${encodeURIComponent(q)}&max=${max}&year=${encodeURIComponent(year || '')}&cat=${encodeURIComponent(cat || '')}`;
   try {
     const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -20,11 +20,11 @@ export async function searchArxiv(query, { max = 8 } = {}) {
     return { ok: true, items: data.items || [], source: data.source || 'arxiv' };
   } catch (e) {
     // 离线回退：本地演示结果
-    return { ok: true, offline: true, items: offlineDemo(q), source: 'offline-demo' };
+    return { ok: true, offline: true, items: offlineDemo(q, year, cat), source: 'offline-demo' };
   }
 }
 
-function offlineDemo(q) {
+function offlineDemo(q, year, cat) {
   const all = [
     {
       id: '1706.03762',
@@ -32,6 +32,7 @@ function offlineDemo(q) {
       authors: 'Vaswani et al.',
       summary: 'Transformer architecture based solely on attention mechanisms.',
       published: '2017-06-12',
+      cat: 'cs.CL',
       pdf: 'https://arxiv.org/pdf/1706.03762',
       github: 'https://github.com/tensorflow/tensor2tensor',
       scoreHint: 0.95,
@@ -42,6 +43,7 @@ function offlineDemo(q) {
       authors: 'Devlin et al.',
       summary: 'Bidirectional Encoder Representations from Transformers.',
       published: '2018-10-11',
+      cat: 'cs.CL',
       pdf: 'https://arxiv.org/pdf/1810.04805',
       github: 'https://github.com/google-research/bert',
       scoreHint: 0.9,
@@ -52,6 +54,7 @@ function offlineDemo(q) {
       authors: 'Brown et al.',
       summary: '175B parameter autoregressive language model.',
       published: '2020-05-28',
+      cat: 'cs.CL',
       pdf: 'https://arxiv.org/pdf/2005.14165',
       github: '',
       scoreHint: 0.88,
@@ -66,6 +69,8 @@ function offlineDemo(q) {
       return { ...it, scoreHint: inter / Math.max(1, toks.size) };
     })
     .filter((it) => it.scoreHint > 0 || /attention|bert|gpt|transformer/i.test(q))
+    .filter((it) => !year || String(it.published || '').startsWith(String(year)))
+    .filter((it) => !cat || it.cat === cat)
     .sort((a, b) => b.scoreHint - a.scoreHint);
 }
 

@@ -230,9 +230,16 @@
     });
   };
 
+  function originBadge(d) {
+    var offline = !d || d.demo || d.mode === "demo" || d.mode === "offline" || d.mode === "pages";
+    var label = offline ? "离线推断" : "模型生成";
+    var cls = offline ? "offline" : "model";
+    return "<p><span class='src-badge " + cls + "'>" + label + "</span></p>";
+  }
   function sectionsHtml(d) {
     if (!d) return "";
-    if (d.reply) return "<p>" + esc(d.reply) + "</p>";
+    var badge = originBadge(d);
+    if (d.reply) return badge + "<p>" + esc(d.reply) + "</p>";
     var html = "";
     if (d.score != null) html += "<h3>综合评分 " + esc(d.score) + (d.overlap != null ? " · 规范重合度 " + esc(d.overlap) + "%" : "") + "</h3>";
     if (d.summary) html += "<p>" + esc(d.summary) + "</p>";
@@ -287,7 +294,7 @@
       });
     }
     if (d.llm_text && !html) html = "<div class='pre'>" + esc(d.llm_text) + "</div>";
-    return html || "<p>已生成。</p>";
+    return badge + (html || "<p>已生成。</p>");
   }
 
   function extraOf(key) {

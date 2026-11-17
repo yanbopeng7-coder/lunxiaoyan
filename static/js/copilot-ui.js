@@ -126,7 +126,9 @@ window.runDiagram = function () {
   }
   const spec = diagramFromIdea(idea, {});
   const svg = renderDiagramSvg(spec);
-  let html = "<div class='viz-svg'>" + svg + "</div>";
+  const drawPrompt = "白底学术流程图，从左到右：" + idea + "。方框节点、细箭头，适合论文印刷，不要装饰性插画。";
+  let html = "<p><span class='src-badge offline'>离线推断</span></p><div class='viz-svg'>" + svg + "</div>";
+  html += preBlock("绘图提示", drawPrompt);
   html += preBlock("Mermaid", toMermaid(spec));
   html += preBlock("Graphviz DOT", toGraphviz(spec));
   html += preBlock("TikZ", toTikz(spec));

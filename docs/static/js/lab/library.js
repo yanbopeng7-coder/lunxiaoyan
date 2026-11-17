@@ -2,7 +2,7 @@
  * M1：PDF/TXT 文献库 CRUD + 语义去重 + 细粒度解析
  */
 import {
-  store, uid, simhash, minhash, minhashSim, simhashSim,
+  store, uid, simhash, minhash, minhashSim, simhashSim, hamming,
   normalizeText, splitSentences, trimQuote, hashHex, fmtTime, esc,
 } from './core.js';
 
@@ -291,12 +291,17 @@ export function findDuplicates(paper, existing) {
     if (!other || other.id === paper.id) continue;
     const sSim = simhashSim(paper.simhash, other.simhash);
     const mSim = minhashSim(paper.minhash, other.minhash);
+    const ham = (paper.simhash && other.simhash) ? hamming(paper.simhash, other.simhash) : 64;
     const score = Math.max(sSim, mSim);
     const sameArxiv = paper.arxiv && other.arxiv && paper.arxiv.replace(/v\d+/i, '') === other.arxiv.replace(/v\d+/i, '');
     if (score >= 0.72 || sameArxiv) {
       hits.push({
         other,
         score,
+        simhash: sSim,
+        minhash: mSim,
+        hamming: ham,
+        method: 'simhash+minhash',
         sameArxiv: !!sameArxiv,
         newerIsIncoming: (paper.version || 0) > (other.version || 0),
         diffSummary: summarizeDiff(other, paper),

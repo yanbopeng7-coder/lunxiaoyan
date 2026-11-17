@@ -4,7 +4,7 @@ import re
 
 
 def _pack(model_id, model_name, sections, extra=None):
-    data = {"mode": "demo", "model": model_name(model_id), "sections": sections}
+    data = {"mode": "offline", "model": "", "sections": sections}
     if extra:
         data.update(extra)
     return data
@@ -115,12 +115,11 @@ def extra_demos(action, text, filename, extra, model_id, model_name, topic):
             model_id,
             model_name,
             [
-                {u"title": u"可行性结论", u"p": u"题目可做，建议收窄为「校园门口/走廊遮挡场景下的行人检测与轨迹连续」，避免做成通用 YOLO 系统说明书。综合可行度 78/100。"},
+                {u"title": u"可行性结论", u"p": u"题目可做，建议收窄为「校园门口/走廊遮挡场景下的行人检测与轨迹连续」，避免做成通用 YOLO 系统说明书。未连接模型，不给出数值评分。"},
                 {u"title": u"研究空白", u"items": [u"校园相机俯仰角、逆光与远距离小目标组合场景缺少公开基准。", u"跟踪指标（IDF1、ID Switch）在本科论文中常被 mAP 替代，存在方法错配。", u"隐私合规与本地部署几乎未被写入同类学位论文。"]},
                 {u"title": u"风险与工作量", u"items": [u"数据：至少 1 个校门口场景、2000+ 张有效标注，否则实验说服力不足。", u"算力：YOLOv8n 即可，不必上很大模型。", u"伦理：监控数据需脱敏，论文中必须写采集授权。"]},
                 {u"title": u"建议题目三种写法", u"items": [u"面向遮挡场景的校园行人多目标跟踪方法研究", u"轻量级校园行人检测与轨迹热力分析系统设计与实现", u"边缘设备上的校园小目标行人感知方法"]},
             ],
-            {u"score": 78},
         ),
         "proposal": lambda: _pack(
             model_id,
