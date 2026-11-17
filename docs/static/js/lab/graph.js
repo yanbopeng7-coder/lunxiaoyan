@@ -6,9 +6,9 @@ import { parseStructuredText } from './library.js';
 
 /** 预置 ~16 篇相关文献元数据，用于一键演示图谱 */
 export const DEMO_CORPUS = [
-  { title: 'Attention Is All You Need', year: 2017, arxiv: '1706.03762', refs: ['Neural machine translation by jointly learning to align and translate', 'Effective approaches to attention-based neural machine translation'], future: 'Apply attention to other modalities; investigate restricted attention for long inputs.', abstract: 'Transformer based solely on attention.' },
-  { title: 'BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding', year: 2019, arxiv: '1810.04805', refs: ['Attention Is All You Need', 'Improving Language Understanding by Generative Pre-Training'], future: 'Explore larger models and multi-task fine-tuning.', abstract: 'Bidirectional Transformer encoder pretraining.' },
-  { title: 'Improving Language Understanding by Generative Pre-Training', year: 2018, arxiv: 'gpt1', refs: ['Attention Is All You Need'], future: 'Scale unsupervised pre-training.', abstract: 'GPT-1 generative pretraining.' },
+  { title: 'Attention Is All You Need', year: 2017, arxiv: '1706.03762', refs: ['Neural machine translation by jointly learning to align and translate', 'Effective approaches to attention-based neural machine translation'], future: 'Apply attention to other modalities; investigate restricted attention for long inputs.', abstract: 'The Transformer replaces recurrence with multi-head self-attention. On WMT 2014 English-German the big model reaches 28.4 BLEU after training on 8 P100 GPUs.', body: 'The encoder stacks N = 6 identical layers. Each layer has multi-head self-attention and a position-wise feed-forward network, wrapped by residual connections and layer normalization. Scaled dot-product attention is softmax(Q K^T / sqrt(d_k)) V. Adam uses beta_1 = 0.9 and beta_2 = 0.98. Base models take about 0.4 seconds per step for 100,000 steps; big models take about 1.0 second per step for 300,000 steps.' },
+  { title: 'BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding', year: 2019, arxiv: '1810.04805', refs: ['Attention Is All You Need', 'Improving Language Understanding by Generative Pre-Training'], future: 'Explore larger models and multi-task fine-tuning.', abstract: 'BERT pretrains a bidirectional Transformer encoder with masked language modeling and next-sentence prediction, then fine-tunes one extra output layer per task.', body: 'Unlike left-to-right language models, every token can attend to both left and right context. The base model has 12 layers and the large model has 24 layers. Fine-tuning updates all parameters on labeled data such as GLUE and SQuAD. The paper argues that bidirectional pretraining is what lets a single encoder transfer across sentence-level and token-level tasks.' },
+  { title: 'Improving Language Understanding by Generative Pre-Training', year: 2018, arxiv: 'gpt1', refs: ['Attention Is All You Need'], future: 'Scale unsupervised pre-training.', abstract: 'GPT-1 first trains a left-to-right Transformer language model on unlabeled text, then adapts it to downstream tasks with supervised fine-tuning.', body: 'The model is a 12-layer decoder-only Transformer. Unlabeled pretraining teaches token prediction. Labeled fine-tuning adds a linear head and keeps the language-model loss as an auxiliary signal. The paper shows gains on natural language inference, question answering, and classification without task-specific architectures.' },
   { title: 'Language Models are Unsupervised Multitask Learners', year: 2019, arxiv: 'gpt2', refs: ['Improving Language Understanding by Generative Pre-Training', 'Attention Is All You Need'], future: 'Further scale and zero-shot transfer.', abstract: 'GPT-2.' },
   { title: 'Language Models are Few-Shot Learners', year: 2020, arxiv: '2005.14165', refs: ['Language Models are Unsupervised Multitask Learners', 'Attention Is All You Need'], future: 'Improve sample efficiency and alignment.', abstract: 'GPT-3 175B few-shot.' },
   { title: 'Neural machine translation by jointly learning to align and translate', year: 2015, arxiv: '1409.0473', refs: [], future: 'Better alignment models.', abstract: 'Bahdanau attention NMT.' },
@@ -33,10 +33,13 @@ arXiv: ${item.arxiv || ''}
 Abstract: ${item.abstract || ''}
 
 1 Introduction
-${item.abstract || item.title}
+${item.body || item.abstract || item.title}
+
+2 Method
+${item.body || item.abstract || ''}
 
 7 Conclusion
-See references.
+${item.abstract || 'See references.'}
 
 Future Work
 ${item.future || ''}
@@ -178,8 +181,16 @@ export function generateSurvey(graph, papers) {
     return n ? `《${n.title}》` : id;
   }).join('、')}。\n\n`;
   md += `### 演进脉络\n`;
+  const byId = Object.fromEntries(papers.map((p) => [p.id, p]));
   top.forEach((n, i) => {
-    md += `${i + 1}. (${n.year || '?'}) ${n.title} — PR=${n.score.toFixed(4)}，入度 ${n.inDeg}\n`;
+    const p = byId[n.id] || {};
+    md += `${i + 1}. (${n.year || '?'}) ${n.title} — PageRank ${n.score.toFixed(4)}，入度 ${n.inDeg}，出度 ${n.outDeg}。${trimQuote(p.abstract || '', 180)}\n`;
+  });
+  md += `\n### 基石论文在写什么\n`;
+  graph.cornerstone.forEach((id) => {
+    const p = byId[id];
+    if (!p) return;
+    md += `- 《${p.title}》：${trimQuote(p.abstract || p.text || '', 260)}\n`;
   });
   md += `\n### Future Work 挖掘\n`;
   md += `- 仍具探索价值（未被后续节点明显覆盖）：**${open.length}** 条\n`;

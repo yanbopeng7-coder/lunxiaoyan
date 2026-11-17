@@ -7,7 +7,7 @@ import { answerQuestion, comparePapers } from './rag.js';
 import { corpusToPapers, buildCitationGraph, generateSurvey, DEMO_CORPUS } from './graph.js';
 import { searchArxiv, filterQuality, recommendFromLibrary } from './retrieve.js';
 import { buildOutline, diagramFromIdea, toMermaid } from './writing.js';
-import { esc, uid, sleep } from './core.js';
+import { esc, uid, sleep, sourceBadge } from './core.js';
 
 /** 意图 → 工具链规划 */
 export function planTasks(goal, opts = {}) {
@@ -76,10 +76,12 @@ async function runTool(step, ctx, onThink) {
         : '未检出重复（将直接入库 v7）');
       if (dups.length) {
         await savePaper(r7.paper); // 演示：保留两者
+        const summary = `去重（离线推断）：SimHash ${((dups[0].simhash || 0) * 100).toFixed(1)}%，MinHash ${((dups[0].minhash || 0) * 100).toFixed(1)}%。差异：${(dups[0].diffSummary || []).slice(0, 3).join('；')}`;
         return {
           ok: true,
           mode: 'offline',
-          summary: `去重（离线推断）：SimHash ${((dups[0].simhash || 0) * 100).toFixed(1)}%，MinHash ${((dups[0].minhash || 0) * 100).toFixed(1)}%。差异：${(dups[0].diffSummary || []).slice(0, 2).join('；')}`,
+          summary,
+          html: sourceBadge('offline') + `<p>${esc(summary)}</p><ul>${(dups[0].diffSummary || []).slice(0, 5).map((d) => `<li>${esc(d)}</li>`).join('')}</ul>`,
           data: { dups, v7: r7.paper },
         };
       }
@@ -98,7 +100,10 @@ async function runTool(step, ctx, onThink) {
       await think(`检索问题：${q}`);
       const res = answerQuestion(papers, q, { topK: 5 });
       await think(res.ok ? `命中 ${res.evidence.length} 条证据，附出处锚点` : '证据不足，拒绝编造');
-      return { ok: res.ok, summary: res.answer, html: res.html, data: res };
+      const summary = res.answer
+        ? res.answer.slice(0, 180)
+        : (res.ok ? `命中 ${res.evidence.length} 条原文` : '证据不足');
+      return { ok: res.ok, summary, html: res.html, data: res };
     }
     case 'rag.compare': {
       await think('选择库内论文做跨文对比…');
@@ -122,9 +127,13 @@ async function runTool(step, ctx, onThink) {
         ? `公网 API 不可用，已用离线演示结果 ${items.length} 条（Pages 静态可演示）`
         : `返回 ${items.length} 条，优先标记含 GitHub 的条目`);
       const recs = recommendFromLibrary(await listPapers());
+      const cards = items.slice(0, 5).map((it) =>
+        `<div class="hit-card"><b>${esc(it.title || '')}</b><div class="muted">${esc(it.authors || '')} · ${esc(it.published || '')} · ${esc(it.cat || '')}</div><p>${esc(it.summary || '')}</p>${it.github ? `<p class="muted">代码 ${esc(it.github)}</p>` : ''}</div>`
+      ).join('');
       return {
         ok: true,
         summary: `检索 ${items.length} 篇；本地推荐 ${recs.length} 条`,
+        html: sourceBadge('offline') + `<p>${res.offline ? 'arXiv 接口不可用，下面是本地样例，不是实时检索。' : '来自 arXiv 接口。'}</p>` + cards,
         data: { items, recs, offline: !!res.offline },
       };
     }
@@ -154,11 +163,13 @@ async function runTool(step, ctx, onThink) {
       const spec = diagramFromIdea(idea, {});
       const mermaid = toMermaid(spec);
       await think('同步导出 Mermaid 架构脚本');
+      const summary = out.usedPapers && out.usedPapers.length
+        ? `框架已生成，引用 ${out.usedPapers.length} 篇真实文献`
+        : '框架已生成并标出证据缺口（未编造文献）';
       return {
         ok: true,
-        summary: out.usedPapers && out.usedPapers.length
-          ? `框架已生成，引用 ${out.usedPapers.length} 篇真实文献`
-          : '框架已生成并标出证据缺口（未编造文献）',
+        summary,
+        html: sourceBadge('offline') + `<p>${esc(summary)}</p><div class="pre">${esc(String(out.markdown || '').slice(0, 4200))}</div><h4>架构图脚本</h4><div class="pre">${esc(mermaid)}</div>`,
         data: { outline: out, mermaid },
       };
     }

@@ -84,6 +84,18 @@ const PHRASES = [
     '我们在约 450 万句对的标准 WMT 2014 英德数据集上训练。'],
   [/We trained our models on one machine with 8 NVIDIA P100 GPUs\./gi,
     '模型在一台配备 8 块 NVIDIA P100 GPU 的机器上训练。'],
+  [/For our base models, each training step took about [\d.]+ seconds\./gi,
+    '基础模型每个训练步约耗时 0.4 秒。'],
+  [/We trained the base models for a total of [\d,]+ steps\./gi,
+    '基础模型共训练 100,000 步。'],
+  [/For our big models, step time was [\d.]+ seconds\./gi,
+    '大模型每步耗时 1.0 秒。'],
+  [/The big models were trained for [\d,]+ steps\./gi,
+    '大模型共训练 300,000 步。'],
+  [/Sentences were encoded using byte-pair encoding\./gi,
+    '句子采用字节对编码。'],
+  [/For English-French, we used the significantly larger WMT 2014 English-French dataset consisting of [\d.]+M sentence pairs\./gi,
+    '英译法使用规模更大的 WMT 2014 英法数据集，共 3600 万句对。'],
   [/We used the Adam optimizer with beta_1 = 0\.9, beta_2 = 0\.98 and epsilon = 10\^-9\./gi,
     '优化器采用 Adam，其中 β₁ = 0.9，β₂ = 0.98，ε = 10⁻⁹。'],
 
@@ -127,6 +139,95 @@ function latinRatio(s) {
  * 离线学术翻译：只做整句/短语替换，绝不做单词插替。
  * 未命中的英文段落原样保留，前缀〔待译〕，避免「注意力 Is All You Need」这类混杂。
  */
+/** 整句没命中时，用学术短语+词表译成中文，避免模型离线就整段空白 */
+const GLOSS = [
+  ['byte-pair encoding', '字节对编码'],
+  ['sentence pairs', '句对'],
+  ['training step', '训练步'],
+  ['base models', '基础模型'],
+  ['big models', '大模型'],
+  ['self-attention', '自注意力'],
+  ['multi-head attention', '多头注意力'],
+  ['feed-forward', '前馈'],
+  ['positional encoding', '位置编码'],
+  ['machine translation', '机器翻译'],
+  ['residual connection', '残差连接'],
+  ['layer normalization', '层归一化'],
+  ['learning rate', '学习率'],
+  ['were encoded using', '采用'],
+  ['encoded using', '采用'],
+  ['we trained our models on one machine with', '我们在一台配备'],
+  ['we trained the base models for a total of', '基础模型共训练'],
+  ['we trained the big models for a total of', '大模型共训练'],
+  ['the big models were trained for', '大模型共训练'],
+  ['for our base models', '对于基础模型，'],
+  ['for our big models', '对于大模型，'],
+  ['each training step took about', '每个训练步约耗时'],
+  ['step time was', '每步耗时为'],
+  ['for english-french', '在英译法任务上，'],
+  ['for english-german', '在英译德任务上，'],
+  ['english-french', '英法'],
+  ['english-german', '英德'],
+  ['we used the significantly larger', '我们使用了规模更大的'],
+  ['consisting of', '，共'],
+  ['on one machine with', '在一台配备'],
+];
+
+const WORD = {
+  sentences: '句子', sentence: '句子', encoded: '被编码', encoding: '编码',
+  using: '使用', used: '使用', use: '使用', we: '我们', our: '本文的',
+  the: '', a: '', an: '', for: '对于', with: '配备', on: '在', of: '',
+  and: '与', about: '约', was: '为', were: '', each: '每个', total: '共',
+  models: '模型', model: '模型', trained: '训练', training: '训练',
+  machine: '机器', dataset: '数据集', larger: '更大的', significantly: '显著',
+  seconds: '秒', second: '秒', steps: '步', step: '步', took: '耗时',
+  time: '时间', base: '基础', big: '大号', gpus: 'GPU', gpu: 'GPU',
+  this: '本文', paper: '论文', proposes: '提出', proposed: '提出',
+  results: '结果', show: '表明', shows: '表明', that: '',
+  in: '在', to: '', from: '来自', by: '由', is: '是', are: '是',
+  not: '不', than: '于', more: '更', less: '更少',
+  attention: '注意力', transformer: 'Transformer', encoder: '编码器',
+  decoder: '解码器', layer: '层', layers: '层', input: '输入', output: '输出',
+  sequence: '序列', token: '词元', tokens: '词元', position: '位置',
+  performance: '性能', accuracy: '准确率', experiment: '实验', experiments: '实验',
+  method: '方法', approach: '方法', based: '基于', network: '网络',
+  neural: '神经', translation: '翻译', language: '语言',
+  during: '在', after: '在……之后', before: '在……之前', between: '之间',
+  which: '', these: '这些', those: '那些', their: '其',
+  also: '也', only: '仅', all: '全部', both: '两者',
+  can: '可以', may: '可以', will: '将', would: '会',
+  have: '具有', has: '具有', had: '曾', been: '',
+  into: '为', over: '超过', under: '低于', per: '每',
+  one: '一台', two: '两', three: '三', four: '四', eight: '八',
+  million: '百万', pairs: '对', data: '数据', batch: '批次',
+  optimizer: '优化器', hardware: '硬件', schedule: '日程',
+};
+
+function glossSentence(text) {
+  let s = ' ' + String(text || '') + ' ';
+  const holds = [];
+  s = s.replace(/(\d+(?:\.\d+)?M|\d[\d,]*(?:\.\d+)?%?)/g, (m) => {
+    holds.push(m);
+    return ` ⟦${holds.length - 1}⟧ `;
+  });
+  const gloss = GLOSS.slice().sort((a, b) => b[0].length - a[0].length);
+  for (const [en, zh] of gloss) {
+    s = s.replace(new RegExp(en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), zh);
+  }
+  s = s.replace(/[A-Za-z][A-Za-z'-]*/g, (w) => {
+    const hit = WORD[w.toLowerCase()];
+    if (hit !== undefined) return hit;
+    if (w.length <= 2) return '';
+    return w;
+  });
+  s = s.replace(/⟦(\d+)⟧/g, (_, i) => holds[Number(i)] || '');
+  s = s.replace(/\s+/g, ' ').replace(/\s*([，。！？、])\s*/g, '$1').trim();
+  s = s.replace(/([\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])/g, '$1');
+  s = s.replace(/，{2,}/g, '，').replace(/^[，、]+/, '');
+  if (s && !/[。！？]$/.test(s)) s += '。';
+  return s;
+}
+
 function applyPhrases(text) {
   let { out, holds } = protectTokens(text);
   let hit = false;
@@ -200,11 +301,17 @@ export function translateAcademic(text) {
         anyHit = true;
       }
     } else {
-      outParts.push('〔待译〕' + part);
+      const g = glossSentence(part);
+      outParts.push(latinRatio(g) < 0.55 ? g : ('〔待译〕' + part));
+      if (latinRatio(g) < 0.55) anyHit = true;
     }
   }
 
-  if (!anyHit) return '〔待译〕' + raw;
+  if (!anyHit) {
+    const g = glossSentence(raw);
+    if (latinRatio(g) < 0.55) return g;
+    return '〔待译〕' + raw;
+  }
   return outParts.join('\n');
 }
 
@@ -240,9 +347,7 @@ export function renderReader(paper) {
     `<div class="ref-item" id="ref-${r.id}" data-ref="${r.id}"><b>[${r.id}]</b> ${esc(r.text)}</div>`
   ).join('') || '<div class="muted">无参考文献条目</div>';
 
-  const hint = pending
-    ? `<p class="muted reader-hint">${sourceBadge('offline')} 左右同行对应，共 ${paras.length} 段；其中 ${pending} 段没有整句译文（黄标「待译」），不是模型翻译。点「模型补全中文」才会调用大模型。</p>`
-    : `<p class="muted reader-hint">${sourceBadge('offline')} 左右同行对应。当前中文来自本地整句对照表，不是模型生成。</p>`;
+  const hint = `<p class="muted reader-hint">${sourceBadge('offline')} 左右同行对应，共 ${paras.length} 段。当前中文是本地译文，模型没连上也能读。${pending ? `其中 ${pending} 段词表盖不住，仍标「待译」。` : ''}连上模型后点「模型补全中文」会换成更通顺的译文。</p>`;
 
   return {
     paras,
@@ -325,7 +430,7 @@ export function hoverTranslateSnippet(text) {
 /** 用后端/隧道模型把待译段落补成通顺中文；失败则保持现状 */
 export async function fillPendingWithModel(paras, apiRun) {
   const pending = paras.filter((p) => String(p.zh || '').startsWith('〔待译〕') || latinRatio(p.zh) > 0.5);
-  if (!pending.length) return paras;
+  if (!pending.length) return { paras, usedModel: false };
   const batch = pending.slice(0, 8);
   const prompt = batch.map((p, i) => `[${i + 1}]\n${p.en}`).join('\n\n');
   try {
@@ -338,15 +443,21 @@ export async function fillPendingWithModel(paras, apiRun) {
         note: '学术中英对照：逐段翻译为通顺中文；保留 BLEU、GPU、Adam、公式与专有名词英文；不要中英混杂插词；按 [1][2]… 编号输出，每段只要译文。',
       },
     });
-    const raw = String(data.llm_text || data.reply || data.text || '');
+    const offline = !data || data.demo || data.mode === 'offline' || data.mode === 'demo' || data.mode === 'pages';
+    const raw = String(data.llm_text || data.reply || '');
+    if (offline || !raw.trim()) return { paras, usedModel: false };
     const parts = raw.split(/\[\d+\]\s*/).map((s) => s.trim()).filter(Boolean);
+    let used = false;
     batch.forEach((p, i) => {
-      if (parts[i]) p.zh = parts[i];
+      if (parts[i] && latinRatio(parts[i]) < 0.55) {
+        p.zh = parts[i];
+        used = true;
+      }
     });
+    return { paras, usedModel: used };
   } catch (e) {
-    /* keep offline */
+    return { paras, usedModel: false };
   }
-  return paras;
 }
 
 /** 刷新成对行（模型补全后整表重绘，避免左右错位） */

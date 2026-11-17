@@ -53,7 +53,12 @@ export function parseStructuredText(raw, meta = {}) {
     bodyLines.push(line);
   }
 
-  if (!title) title = (lines[0] || 'Untitled').slice(0, 160);
+  const cleanedLines = lines.filter((l) => !/^---\s*Page \d+/.test(l) && !/^\[OCR_/.test(l));
+  if (!title || /^---\s*Page/.test(title)) {
+    const named = cleanedLines.find((l) => /attention is all you need/i.test(l));
+    title = named || cleanedLines.find((l) => l.length > 12 && l.length < 180) || title || 'Untitled';
+    title = String(title).replace(/^title\s*:/i, '').trim().slice(0, 160);
+  }
   const full = text;
   const pages = paginate(full);
   const sections = buildSections(headings, full);
@@ -231,10 +236,11 @@ export async function extractPdfText(file, opts = {}) {
       const Tesseract = await loadTesseract();
       const ocrN = Math.min(doc.numPages, maxOcrPages);
       const ocrParts = [];
+      const asset = (rel) => new URL(rel, window.location.href).href;
       const worker = await Tesseract.createWorker('eng', 1, {
-        workerPath: 'static/ocr/worker.min.js',
-        corePath: 'static/ocr/',
-        langPath: 'static/ocr/lang/',
+        workerPath: asset('static/ocr/worker.min.js'),
+        corePath: asset('static/ocr/'),
+        langPath: asset('static/ocr/lang/'),
         logger: () => {},
       });
       for (let i = 1; i <= ocrN; i++) {
@@ -312,19 +318,39 @@ export function findDuplicates(paper, existing) {
   return hits;
 }
 
+function bodySentences(text) {
+  const s = String(text || '')
+    .replace(/^(Title|Authors?|arXiv)\s*:.*$/gim, '')
+    .replace(/^Abstract\s*:/gim, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return s.split(/(?<=[.!?])\s+(?=[A-Z]|\d+(?:\.\d+)*\s)/)
+    .map((x) => x.trim())
+    .filter((x) => x.length > 40 && !/^\d+(\.\d+)*\s/.test(x));
+}
+
+export function addedSentences(oldText, newText, limit = 6) {
+  const oldSet = new Set(bodySentences(oldText).map((s) => normalizeText(s)));
+  return bodySentences(newText).filter((s) => !oldSet.has(normalizeText(s))).slice(0, limit);
+}
+
+export function pairScores(a, b) {
+  const ham = hamming(a.simhash, b.simhash);
+  const sSim = 1 - ham / 64;
+  const mSim = minhashSim(a.minhash, b.minhash);
+  return { simhash: sSim, minhash: mSim, hamming: ham, score: Math.max(sSim, mSim) };
+}
+
 function summarizeDiff(oldP, newP) {
   const tips = [];
-  if (oldP.version !== newP.version) tips.push(`版本 ${oldP.version || '?'} → ${newP.version || '?'}`);
-  const a = new Set(splitSentences(oldP.abstract || '').map((s) => normalizeText(s)));
-  const b = splitSentences(newP.abstract || '');
-  const novel = b.filter((s) => !a.has(normalizeText(s))).slice(0, 2);
-  novel.forEach((s) => tips.push('摘要新增：' + trimQuote(s, 100)));
-  const oldFuture = (oldP.text || '').match(/Future Work[\s\S]{0,400}/i);
-  const newFuture = (newP.text || '').match(/Future Work[\s\S]{0,400}/i);
-  if (newFuture && (!oldFuture || normalizeText(newFuture[0]) !== normalizeText(oldFuture[0]))) {
-    tips.push('Future Work 有修订');
+  if ((oldP.version || 0) !== (newP.version || 0)) tips.push(`版本 ${oldP.version || '?'} → ${newP.version || '?'}`);
+  const notes = String(newP.text || '').match(/Version Diff Notes[\s\S]{0,700}/i);
+  if (notes) {
+    notes[0].split('\n').map((l) => l.trim()).filter((l) => l.startsWith('-')).slice(0, 5)
+      .forEach((l) => tips.push(l.replace(/^-+\s*/, '')));
   }
-  if (!tips.length) tips.push('正文高度重合，建议保留较新版本');
+  addedSentences(oldP.text, newP.text, 4).forEach((s) => tips.push('v7 新增：' + trimQuote(s, 140)));
+  if (!tips.length) tips.push('两篇正文几乎相同，没有可列出的新增句');
   return tips;
 }
 

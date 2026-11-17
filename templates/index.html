@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=41" />
+  <link rel="stylesheet" href="static/css/style.css?v=49" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -205,8 +205,8 @@
           </div>
           <textarea id="libPaste" rows="5" placeholder="或粘贴论文纯文本（含 Title/Abstract/References）"></textarea>
           <button class="btn ghost" type="button" onclick="ingestLibPaste()">粘贴入库</button>
-          <div id="libList"></div>
           <div class="report" id="libDetail"></div>
+          <div id="libList"></div>
         </div>
       </section>
 
@@ -214,7 +214,7 @@
         <div class="hero"><h1>抗幻觉知识问答</h1><p>模块二：RAG 溯源锚点 · 多文对比 · 证据不足拒答</p></div>
         <div class="card">
           <div class="pick-list" id="ragPickList"></div>
-          <textarea id="ragQuestion" rows="3" placeholder="例：Adam 的 β1/β2？训练用了几块 P100？WMT En-De BLEU？"></textarea>
+          <textarea id="ragQuestion" rows="3" placeholder="例：Adam 的 β1/β2？训练用了几块 P100？WMT En-De BLEU？">Adam beta_1 beta_2, how many P100 GPUs, and what BLEU on WMT English-German?</textarea>
           <div class="row">
             <button class="btn" type="button" onclick="runRagAsk()">带出处回答</button>
             <button class="btn ghost" type="button" onclick="runRagCompare()">多文对比</button>
@@ -602,9 +602,9 @@
   <script src="static/vendor/fflate.min.js?v=23"></script>
   <script src="static/vendor/pdf.min.js?v=23"></script>
   <script src="static/js/readfile.js?v=23"></script>
-  <script src="static/js/pages-demo.js?v=41"></script>
-  <script src="static/js/app.js?v=41"></script>
-  <script type="module" src="static/js/copilot-ui.js?v=41"></script>
-  <script type="module" src="static/js/agent-ui.js?v=41"></script>
+  <script src="static/js/pages-demo.js?v=49"></script>
+  <script src="static/js/app.js?v=49"></script>
+  <script type="module" src="static/js/copilot-ui.js?v=49"></script>
+  <script type="module" src="static/js/agent-ui.js?v=49"></script>
 </body>
 </html>

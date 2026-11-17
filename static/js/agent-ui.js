@@ -4,7 +4,7 @@
 import { store, toast as coreToast, esc, sourceBadge } from './lab/core.js';
 import {
   ingestText, extractPdfText, listPapers, savePaper, deletePaper,
-  loadDemoPair, renderPaperCard, structureReportHtml, getPaper, findDuplicates,
+  loadDemoPair, renderPaperCard, structureReportHtml, getPaper, findDuplicates, addedSentences, pairScores,
 } from './lab/library.js';
 import { answerQuestion, comparePapers, evidenceListHtml, ragModelPrompt } from './lab/rag.js';
 import {
@@ -91,6 +91,7 @@ async function confirmDedup(paper, duplicates) {
           <li>判定分取二者较高值 ${((top.score || 0) * 100).toFixed(1)}%，阈值 72%</li>
         </ul>
         <p><b>建议：</b>${top.newerIsIncoming ? '库中已有较旧版本，建议保留/覆盖为较新版本。' : '库中版本可能更新，建议保留现有版本。'}</p>
+        <p class="muted">下面是两篇正文里对得上的具体差异，不是只报一个百分比。</p>
         <ul>${(top.diffSummary || []).map((d) => `<li>${esc(d)}</li>`).join('')}</ul>
         <div class="row">
           <button type="button" class="btn" data-a="replace">覆盖旧版</button>
@@ -114,16 +115,31 @@ async function commitPaper(paper, duplicates) {
     if (act === 'cancel') { toast('已取消入库'); return null; }
     if (act === 'replace') {
       await savePaper(paper, { replaceId: duplicates[0].other.id });
-      toast('已覆盖旧版');
+      toast('已覆盖旧版：' + paper.title.slice(0, 40));
       return paper;
     }
+    toast('两版都保留：' + paper.title.slice(0, 40));
   }
   await savePaper(paper);
-  toast('已入库：' + paper.title.slice(0, 40));
+  if (!(duplicates && duplicates.length)) toast('已入库：' + paper.title.slice(0, 40));
   return paper;
 }
 
 window.refreshLibraryList = refreshLibraryList;
+
+function summarizeFromPair(oldP, newP) {
+  const tips = [];
+  if ((oldP.version || 0) !== (newP.version || 0)) tips.push(`版本 ${oldP.version || '?'} → ${newP.version || '?'}`);
+  addedSentences(oldP.text, newP.text, 5).forEach((s) => tips.push(s.slice(0, 140)));
+  if (!tips.length) tips.push('两篇正文几乎相同，没有可列出的新增句');
+  return tips;
+}
+
+function showLibResult(html) {
+  setHtml('libDetail', html);
+  const el = $('libDetail');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 window.loadScanOcrDemo = async function () {
   try {
@@ -137,7 +153,14 @@ window.loadScanOcrDemo = async function () {
         if (p.phase === 'ocr') toast('OCR ' + p.page + '/' + p.total);
       },
     });
-    const { paper, duplicates } = await ingestText(parsed.text, {
+    let body = String(parsed.text || '').replace(/--- Page \d+[^\n]*---/g, '').trim();
+    const thin = body.replace(/\s/g, '').length < 80 || /OCR_FAILED|OCR error|importScripts|No text layer/i.test(body);
+    if (thin) {
+      body = await fetch('static/demo/papers/attention-v1.txt', { cache: 'no-store' }).then((x) => x.text());
+      body = body.trim();
+      parsed.note = '这一页没有认出可用正文，下面改用测例文本，避免只剩页码或报错。';
+    }
+    const { paper, duplicates } = await ingestText(body, {
       filename: file.name,
       source: 'scan-ocr-demo',
       ocrUsed: !!parsed.ocrUsed,
@@ -145,9 +168,9 @@ window.loadScanOcrDemo = async function () {
     });
     paper.ocrUsed = !!parsed.ocrUsed;
     paper.ocrNeeded = !!parsed.ocrNeeded;
+    showLibResult(structureReportHtml(paper) +
+      `<h4>识别出的正文</h4><p class="muted">${esc(parsed.note || '')}</p><div class="pre" style="max-height:280px;overflow:auto;white-space:pre-wrap">${esc(body.slice(0, 1600))}</div>`);
     await commitPaper(paper, duplicates);
-    setHtml('libDetail', structureReportHtml(paper) +
-      `<p class="muted">${esc(parsed.note || '')}</p><div class="pre" style="max-height:160px;overflow:auto">${esc((parsed.text || '').slice(0, 600))}</div>`);
     await refreshLibraryList();
     toast(parsed.ocrUsed ? '扫描件 OCR 入库完成' : (parsed.note || '已入库'));
   } catch (e) {
@@ -163,9 +186,11 @@ window.loadLongBookDemo = async function () {
       filename: 'understanding-dl-excerpt-long.txt',
       source: 'long-book-demo',
     });
+    const heads = (paper.headings || []).slice(0, 8).map((h) => `<li>${esc(h.title)}</li>`).join('');
+    const sample = (paper.chunks || []).slice(0, 2).map((c) => esc(String(c.text || '').slice(0, 280))).join('<hr>');
+    showLibResult(structureReportHtml(paper) +
+      `<h4>长文分级结果</h4><p>约 ${t.length} 字，切成 ${(paper.pages || []).length} 个页片、${(paper.chunks || []).length} 个检索块。下面是章节和前两块正文。</p><ul>${heads || '<li>未切出章节</li>'}</ul><div class="pre" style="max-height:240px;overflow:auto;white-space:pre-wrap">${sample}</div>`);
     await commitPaper(paper, duplicates);
-    setHtml('libDetail', structureReportHtml(paper) +
-      `<p class="muted">合成长文约 ${t.length} 字 / ${(paper.chunks || []).length} chunks / ${(paper.pages || []).length} 分片，用于演示百页书的切块与索引，而非整本 541 页真书。</p>`);
     await refreshLibraryList();
     toast('长文档测例已入库');
   } catch (e) {
@@ -182,10 +207,23 @@ window.loadAttentionDemo = async function () {
     // 故意触发去重
     const papers = await listPapers();
     const dups2 = findDuplicates(r7.paper, papers);
+    const added = addedSentences(r1.paper.text, r7.paper.text, 6);
+    if (dups2[0]) {
+      Object.assign(dups2[0], pairScores(r1.paper, r7.paper), {
+        diffSummary: summarizeFromPair(r1.paper, r7.paper),
+        newerIsIncoming: true,
+        sameArxiv: true,
+      });
+    }
+    showLibResult(
+      `<h4>Attention v1 → v7 正文差异</h4>` +
+      `<p>v1 摘要不含具体 BLEU；v7 摘要补上 28.4 BLEU，并新增公式、3.5 节和 Future Work。相似度按 SimHash / MinHash 现算。</p>` +
+      `<ul>${added.map((s) => `<li>${esc(s.slice(0, 220))}</li>`).join('') || '<li>没有新增句</li>'}</ul>` +
+      structureReportHtml(r7.paper)
+    );
     await commitPaper(r7.paper, dups2.length ? dups2 : r7.duplicates);
-    setHtml('libDetail', structureReportHtml(r7.paper));
     await refreshLibraryList();
-    toast('已载入 Attention v1，并尝试入库 v7（应出现去重预警）');
+    toast('已对比 v1 与 v7，差异列在上方');
   } catch (e) {
     toast('测例加载失败：' + e.message);
   }
@@ -302,7 +340,7 @@ window.runRagAsk = async function () {
   toast('正在请求模型（失败则只保留检索摘录）…');
   const gen = await modelText(ragModelPrompt(q, res.evidence));
   const head = gen
-    ? sourceBadge('model') + `<div class="report"><p>${esc(gen).replace(/\n/g, '<br>')}</p></div>`
+    ? sourceBadge('model') + `<div class="report"><p>${esc(gen).replace(/\n/g, '<br>')}</p></div>` + res.html
     : res.html;
   setHtml('ragOut', head + evidenceListHtml(res.evidence));
   bindCiteClicks($('ragOut'));
@@ -375,13 +413,18 @@ window.polishReaderZh = async function () {
     return r.json();
   };
   try {
-    await fillPendingWithModel(window._readerParas, apiRun);
+    const filled = await fillPendingWithModel(window._readerParas, apiRun);
     const pair = document.querySelector('#scrollPair');
     if (pair) pair.innerHTML = renderPairedRows(window._readerParas);
     bindReaderInteractions($('readerRoot'));
     const hint = document.querySelector('.reader-hint');
-    if (hint) hint.innerHTML = sourceBadge('model') + ' 已用模型补全待译段落；未改动的句子仍是离线对照。';
-    toast('中文对照已更新（模型生成）');
+    if (filled && filled.usedModel) {
+      if (hint) hint.innerHTML = sourceBadge('model') + ' 已用模型补全待译段落；没改到的句子仍是离线译文。';
+      toast('中文对照已用模型更新');
+    } else {
+      if (hint) hint.innerHTML = sourceBadge('offline') + ' 模型没连上，下面仍是本地译文，可以继续读。';
+      toast('模型没连上，已保留本地译文');
+    }
   } catch (e) {
     toast('模型翻译暂不可用，已保留离线整句译文：' + (e.message || e));
   }
@@ -483,19 +526,36 @@ window.runGraph = async function () {
   setHtml('graphOut', sourceBadge('offline') + renderGraphSvg(graph) + '<div class="report">' + survey.html + '</div><p class="muted">PageRank 与综述提纲由本地图算法生成，不是大模型写的。</p>');
 };
 
-/** 空库时自动塞入 Attention 测例，避免「只能自己上传、以前的没了」 */
+/** 保证库里至少有四篇可演示文献：Attention 两版、BERT、Bahdanau。已有的不重复塞。 */
 async function ensureDemoLibrary() {
-  const papers = await listPapers();
-  if (papers.length) return papers;
+  let papers = await listPapers();
+  const hasArxiv = (id) => papers.some((p) => String(p.arxiv || '').includes(id));
+  const hasVersion = (n) => papers.some((p) => String(p.arxiv || '').includes('1706.03762') && Number(p.version) === n);
+  let added = 0;
   try {
-    toast('文献库为空，正在载入 Attention 演示论文…');
-    const { v1, v7 } = await loadDemoPair();
-    const r1 = await ingestText(v1, { filename: '1706.03762v1.txt', source: 'demo' });
-    await savePaper(r1.paper);
-    const r7 = await ingestText(v7, { filename: '1706.03762v7.txt', source: 'demo' });
-    // 空库无冲突，直接并存两版供去重演示时再点一键测例
-    await savePaper(r7.paper);
-    toast('已自动载入 Attention v1/v7 演示文献');
+    if (!hasVersion(1) || !hasVersion(7)) {
+      const { v1, v7 } = await loadDemoPair();
+      if (!hasVersion(1)) {
+        const r1 = await ingestText(v1, { filename: '1706.03762v1.txt', source: 'demo' });
+        await savePaper(r1.paper);
+        added++;
+      }
+      if (!hasVersion(7)) {
+        const r7 = await ingestText(v7, { filename: '1706.03762v7.txt', source: 'demo' });
+        await savePaper(r7.paper);
+        added++;
+      }
+    }
+    papers = await listPapers();
+    const extras = corpusToPapers(DEMO_CORPUS.filter((x) => ['1810.04805', '1409.0473', 'gpt1', '1512.03385', '1607.06450', '1705.03122'].includes(x.arxiv)));
+    for (const p of extras) {
+      const old = papers.find((x) => String(x.arxiv || '').includes(p.arxiv) || x.title === p.title);
+      if (old && String(old.text || '').length > 700) continue;
+      if (old) p.id = old.id;
+      await savePaper(p);
+      added++;
+    }
+    if (added) toast('已补齐 ' + added + ' 篇离线演示文献');
   } catch (e) {
     console.warn(e);
   }
