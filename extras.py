@@ -106,9 +106,100 @@ def _rewrite_pack(src, model_id, model_name):
     )
 
 
+def _by_topic(action, text, filename, extra, model_id, model_name, topic):
+    blob = (topic or u"") + u"\n" + (text or u"")
+    t = topic or u"待定题目"
+    if any(k in blob for k in (u"病虫", u"大豆", u"叶片", u"作物", u"病害", u"植物", u"农业")):
+        problem = u"田间「%s」的早期病斑小，光照和品种变化大。通用检测器会漏掉小病斑，并把外观接近的病害混成一类。跟踪和轨迹不属于本题。" % t
+        method = u"采集田间叶片、写清标注规范、做检测或分割，并提高小病斑的采样权重。对照是官方默认权重，指标是 mAP@0.5、按类别召回、小病斑子集和混淆矩阵。"
+        chapters = [
+            u"第1章 绪论：田间哪一环节漏掉早期病斑，本文不解决施药决策。",
+            u"第2章 相关工作：实验室叶片数据、病斑检测或分割、边缘部署。不要写成校园监控。",
+            u"第3章 方法：叶片裁剪、检测或分割、类别头。不要写多目标跟踪。",
+            u"第4章 实验：按地块划分。列出小病斑召回和相似病害混淆。消融一次只改一个因素。",
+            u"第5章 总结：只写表里有的数字，以及夜间、新品种、未见病害这些做不到的事。",
+        ]
+    else:
+        problem = u"「%s」要写清输入、一个能看见的失败，以及你准备用哪项指标证明改动有效。不要把题目里没有的任务写进方法。" % t
+        method = u"只保留一条主线：输入、与基线差在哪一个模块、这个差异会改变结果表的哪一列。没有实验表的百分点不要先写。"
+        chapters = [
+            u"第1章 绪论：用「%s」的一个具体失败开头，贡献对应后文的表。" % t,
+            u"第2章 相关工作：两条到三条技术线，每条写共识、分歧、空白和本文位置。",
+            u"第3章 方法：输入、关键模块、输出，以及和基线的一处差异。",
+            u"第4章 实验：数据来源、划分、主指标、失败子集、一次只改一个因素的消融。",
+            u"第5章 总结：复述已有数字，并写数据覆盖不到的情形。",
+        ]
+    questions = [
+        u"现有方法最容易失败的输入长什么样？失败占测试集多少？",
+        u"删掉你的改动后，主指标和失败子集哪一个先掉？",
+        u"训练和测试是否共享同一批样本或同一场景？",
+    ]
+    draft = problem + u"\n\n" + method
+    sections = {
+        "topic": [
+            {u"title": u"可行性", u"p": u"「%s」可以做。这是离线判断，不打分。\n%s" % (t, problem)},
+            {u"title": u"收窄之后", u"p": method},
+            {u"title": u"开题必须回答", u"items": questions},
+        ],
+        "proposal": [
+            {u"title": u"一、选题依据", u"pre": draft},
+            {u"title": u"二、章节", u"items": chapters},
+            {u"title": u"三、12 周", u"items": [u"第1–2周：按技术线做差异表", u"第3–5周：数据和划分写死", u"第6–8周：基线和一处改动", u"第9–12周：失败案例和摘要"]},
+        ],
+        "litreview": [
+            {u"title": u"分组", u"p": method},
+            {u"title": u"过渡段", u"pre": u"现有工作在通用数据上比较完整，但对「%s」的具体约束讨论不足。本文将问题收窄到一个可观察的失败，并用主指标和失败子集一起验证。" % t},
+        ],
+        "expand": [
+            {u"title": u"扩写（%s）" % (extra.get("chapter") or u"本章"), u"pre": draft + u"\n\n" + u"\n".join(chapters)},
+            {u"title": u"还要补", u"items": questions},
+        ],
+        "defense": [
+            {u"title": u"答辩题", u"items": questions + [u"基线是官方默认配置还是改过的配置？", u"哪个数字还没有实验，准备怎么说尚未完成？"]},
+            {u"title": u"40 秒", u"p": u"先给判断，再指表或图的编号，最后说这个证据解释不了什么。"},
+        ],
+        "experiment": [
+            {u"title": u"实验", u"p": method},
+            {u"title": u"表里要有的列", u"items": chapters[3:4] + questions},
+        ],
+        "ppt": [
+            {u"title": u"页序", u"items": [u"题目与一句结论", u"失败现象", u"相关工作", u"方法差异", u"数据划分", u"主结果", u"消融", u"失败案例", u"局限", u"总结"]},
+            {u"title": u"开场", u"pre": u"各位老师好。题目是%s。%s" % (t, problem)},
+        ],
+        "venue": [
+            {u"title": u"去向", u"p": u"先满足学校对「%s」的学位论文要求，再按任务名称找期刊。不要先选热门 venue 再改题目。" % t},
+            {u"title": u"投稿前", u"items": questions},
+        ],
+        "weekly": [
+            {u"title": u"周报", u"pre": u"【题目】%s\n【本周】%s\n【卡住】%s\n【下周】补对照表里的失败子集。" % (t, text or u"整理文献差异或跑通基线。", questions[0])},
+        ],
+        "schedule": [
+            {u"title": u"里程碑", u"items": chapters},
+        ],
+    }
+    chosen = sections.get(action) or [
+        {u"title": u"按题目", u"p": draft},
+        {u"title": u"章节", u"items": chapters},
+        {u"title": u"要回答", u"items": questions},
+    ]
+    data = _pack(model_id, model_name, chosen)
+    data["source"] = filename or t
+    data["topic"] = t
+    return data
+
+
 def extra_demos(action, text, filename, extra, model_id, model_name, topic):
     extra = extra or {}
-    topic = topic or extra.get("topic") or u"基于深度学习的校园行人检测与轨迹分析"
+    topic = topic or extra.get("topic") or u""
+    blob = topic + u"\n" + (text or u"") + u"\n" + (extra.get("chapter") or u"") + u"\n" + (extra.get("answer") or u"")
+    ped = any(k in blob for k in (u"行人", u"轨迹", u"跟踪", u"校园监控", u"安防"))
+    if not topic and not blob.strip():
+        topic = u"基于深度学习的校园行人检测与轨迹分析"
+        ped = True
+    if not ped:
+        if not topic:
+            topic = (text or u"待定题目")[:24]
+        return _by_topic(action, text, filename, extra, model_id, model_name, topic)
 
     catalog = {
         "topic": lambda: _pack(

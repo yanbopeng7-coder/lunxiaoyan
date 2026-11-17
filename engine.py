@@ -134,12 +134,12 @@ DEMO_THESIS = """题目：基于深度学习的校园行人检测与轨迹分析
 """
 
 SYSTEM_PROMPTS = {
-    "chat": "你是论小研，面向本科生与研究生的科研论文写作助手。回答要具体、可执行，使用中文，必要时给出段落示例。不要空泛鼓励。",
+    "chat": "你是论小研，面向本科生与研究生的科研论文写作助手。用中文写完整回答，不少于 400 字，分成问题、方法、实验、局限四段。必须使用用户题目里的对象，不要换成另一篇论文的任务。没有实验表的百分点不要编。不要空泛鼓励。",
     "evaluate": "你是论文评审助手。根据文稿给出 0-100 综合评分、学术规范重合度估计（百分比，仅作表述规范与原创性提示，非查重鉴定）、优点、不足、改进建议、分项评分。用 JSON 输出。",
-    "outline": "你是科研写作规划助手。按主题生成 5 章大纲与 3 个研究问题。严禁编造不存在的论文题名/作者/会议。若用户未提供文献列表，文献区只写「待补充检索」，不要虚构参考文献。JSON 输出。",
-    "coach": "你是论文写作导师。根据章节给出引导题、参考表述，并对学生作答从优点、不足、改写建议点评，给 0-10 分。",
+    "outline": "你是科研写作规划助手。按用户给出的主题写 5 章大纲和 3 个研究问题。每一章的 points 至少 80 个汉字，写清本章要回答的问题、要放的图表和不能写进本章的内容。题目里没有的任务不要写进方法：作物病害不要写行人跟踪，翻译或摘要任务不要写检测。研究问题写成完整问句。严禁编造论文题名、作者和会议。没有文献列表时，文献区写「待补充检索」。只输出 JSON，字段为 topic、chapters[{title,points}]、questions[{q}]。",
+    "coach": "你是论文写作导师。引导题、参考表述和改写都要紧扣学生的题目。参考表述不少于 150 字，包含问题现象、与基线的一处差异、准备用的指标。题目里没有的任务不要写进去。没有实验表就不要写具体百分点。不要打分。",
     "polish": "你是学术中文润色编辑。分析语言、逻辑、学术表达，给 0-10 分，列出亮点、逻辑通顺度、优化方向与改写示例。JSON。",
-    "abstract": "你是学报编辑。按目标要求生成中文摘要、英文摘要、3-5 个中文关键词与对应英文关键词。",
+    "abstract": "你是学报编辑。按题目写中文摘要和英文摘要，每篇不少于 150 字，包含问题、方法、数据划分、要报告的指标和局限。数字只能来自用户文稿；文稿里没有的百分点不要编。再给 3 到 5 个关键词。",
     "refs": "你是参考文献编辑，按 GB/T 7714—2025 顺序编码制整理条目，不要再用 GB/T 7714—2015。西文个人责任者姓仅首字母大写，名缩写为首字母且不加下点。预印本用 PP/OL，不要标成 EB/OL。标准只写标准编号和标准名称。纠正残缺字段并给出校验说明。",
     "path": "你是研究生导师。根据专业、技能、兴趣与作业文本，给出短期（3个月）与中长期（1-2年）科研路径。",
     "submit": "你是投稿顾问。对照期刊/学位规范与论文初稿，给出格式、内容侧重、结构优化建议。",
@@ -370,117 +370,141 @@ def _guess_topic(text, filename):
 
 def demo_evaluate(text, filename, model_id):
     topic = _guess_topic(text, filename)
+    info = _brief(topic, text)
     return {
         "mode": "offline",
         "source": filename or u"未命名文稿",
         "topic": topic,
         "strengths": [
-            u"研究思路清晰，检测—跟踪—分析流水线完整，问题来源贴合智慧校园场景。",
-            u"实验数据相对完整，包含多场景自建数据与 mAP、FPS 等核心指标。",
-            u"文献覆盖全面，YOLO 系列与多目标跟踪主线交代清楚。",
+            info["problem"],
+            info["method"],
         ],
         "weaknesses": [
-            u"摘要信息量不足：创新点、数据规模、局限与结论未同时交代。",
-            u"讨论部分深度不够，结果解释停留在数字罗列，缺少误差与失败案例分析。",
-            u"格式不规范，参考文献混用多种体例，部分条目缺卷期或页码。",
+            info["metric"],
+            u"相关工作如果按年份罗列，看不出本文位置。",
+            u"参考文献若混用体例，按 GB/T 7714—2025 重排，缺页码的标出来，不要编页码。",
         ],
         "suggestions": [
-            u"在绪论与摘要中单独成段论述创新点：校园小目标/逆光增强、跟踪关联策略与热力分析的组合贡献。",
-            u"补充消融实验（数据增强、跟踪器、输入尺度）与至少一组 SOTA 对比。",
-            u"按 GB/T 7714—2025 顺序编码制统一参考文献，并核对每条必要字段。",
+            info["zh"],
+            u"每一条贡献对应第4章的一列，对不上的句子删掉。",
+            u"失败案例要写清错在什么输入上、错成什么、占测试集多少。",
         ],
-        "summary": u"文稿《%s》的下列意见是离线检查清单，不是模型打分，也不给综合分。建议优先补强创新点论证、实验对比与参考文献格式。"
-        % (filename or topic,),
+        "summary": u"文稿《%s》按「%s」做离线检查，不打分。%s"
+        % (filename or topic, info["kind"], info["problem"]),
         "model": "",
+    }
+
+
+def _brief(topic, text):
+    blob = (topic or u"") + u"\n" + (text or u"")
+    t = topic or _guess_topic(text, u"") or u"待定题目"
+    if any(k in blob for k in (u"病虫", u"大豆", u"叶片", u"作物", u"病害", u"植物", u"农业")):
+        return {
+            "kind": u"田间叶片病害",
+            "problem": u"田间拍摄的「%s」里，早期病斑小，光照和品种差很大。直接套通用检测器时，小病斑召回低，相似病害还会混成一类。" % t,
+            "method": u"流水线是采集与标注、叶片裁剪、病斑检测或分割、按类别输出位置和置信度。跟踪、轨迹和 ByteTrack 与本题无关。",
+            "metric": u"检测报 mAP@0.5 和按病害类别的召回，分类报宏平均 F1 与混淆矩阵，并单列早期小病斑。没有实验表就不要先写百分点。",
+            "chapters": [
+                {"title": u"第1章 绪论", "points": u"写清「%s」发生在田间哪一环节，现有人工巡田漏掉早期病斑。贡献写成可检验条目，并预告实验表。" % t, "cite": u"引用田间病害数据与实验室叶片数据的差距，不要写校园监控。"},
+                {"title": u"第2章 相关工作", "points": u"分公开叶片数据集、病斑检测或分割、农业边缘部署三条线。每条线收束为共识、分歧、空白和本文位置。", "cite": u"本文位置只写面向田间叶片的早期病斑，不要写成新网络，除非表里有对照。"},
+                {"title": u"第3章 方法", "points": u"输入是田间叶片图像。模块是标注规范、检测或分割骨干、类别头和阈值。画出与官方默认权重的差异。方法章只保留叶片检测或分割，不要加入轨迹模块。", "cite": u"方法章只解释为什么提高小病斑采样。"},
+                {"title": u"第4章 实验", "points": u"按地块或拍摄日期划分。表列类别样本量、mAP 或 F1、小病斑召回、相似病害混淆和速度。消融一次只动一个因素。", "cite": u"同一株叶子不能同时出现在训练和测试。"},
+                {"title": u"第5章 总结", "points": u"只总结检测得到的数字和做不到的事：夜间、新品种、未见病害。", "cite": u"展望不要写「意义重大」。"},
+            ],
+            "questions": [
+                {"q": u"早期小病斑的召回比中后期低多少？这一差距是漏检还是标注噪声？", "hint": u"按短边小于 32 像素的子集单独列表。"},
+                {"q": u"外观接近的两类病害主要错到谁？", "hint": u"用混淆矩阵，不要只给总准确率。"},
+                {"q": u"训练和测试是否按地块分开？", "hint": u"同一株作物的不同叶子同时进入两侧，不能称为泛化。"},
+            ],
+            "coach_ref": u"与直接使用通用检测器不同，本文面向田间叶片：早期病斑尺度小，相似病害外观接近，同一地块光照变化大。检测端按叶片裁剪并提高小目标采样，输出各类病害的框和置信度。验证看按类别召回、小病斑子集和混淆矩阵。跟踪不属于本题。",
+            "zh": u"田间叶片的早期病斑小，光照和品种变化大，通用检测器漏检明显，相似病害也容易混淆。本文给出标注规范，并提高小病斑采样权重。实验按地块划分，报告 mAP@0.5、按类别召回和小病斑子集。表中没有的数字不写入摘要。夜间、新品种和未见病害仍是局限。",
+            "en": u"Early lesions on field leaves are small, and illumination and cultivar shift cause generic detectors to miss them or confuse similar diseases. This thesis states the labeling rule and biases training toward small lesions. Splits follow field plots. Report mAP@0.5, per-class recall, and the small-lesion subset. Do not invent numbers. Night imaging, new cultivars, and unseen diseases remain limits.",
+        }
+    if any(k in blob for k in (u"行人", u"轨迹", u"跟踪", u"校园监控", u"安防")):
+        return {
+            "kind": u"校园行人",
+            "problem": u"「%s」若直接套通用检测器，逆光、门口遮挡和远处小目标会漏检；只报检测框也无法回答轨迹是否被打断。" % t,
+            "method": u"检测端处理尺度和遮挡，跟踪端把框变成轨迹，分析端只消费轨迹点。三个模块各自对应一个现象。",
+            "metric": u"检测用 mAP@0.5，跟踪单独报身份切换。已有文稿中的 86.4% 只说明检测，不能代替跟踪。",
+            "chapters": [
+                {"title": u"第1章 绪论", "points": u"写清漏检发生在什么条件下，本文做检测、跟踪还是两者。", "cite": u"贡献条目对应后文的表。"},
+                {"title": u"第2章 相关工作", "points": u"检测器、跟踪器、校园场景三条线，写明不解决人脸识别。", "cite": u"每条线用共识、分歧、空白、本文位置收束。"},
+                {"title": u"第3章 方法", "points": u"检测输出框，跟踪做关联，分析只读轨迹。画出与官方检测器加简单排序跟踪的差异。", "cite": u"不要把三个模块合成一句「结合了深度学习」。"},
+                {"title": u"第4章 实验", "points": u"检测对照和跟踪对照分开列表。消融一次只关一个模块，并给出失败案例占比。", "cite": u"测试相机不能出现在训练视频里还不说明。"},
+                {"title": u"第5章 总结", "points": u"检测数字和跟踪数字分开写。局限写夜间，以及保存的是原视频还是轨迹点。", "cite": u"没有的实验写成尚未完成。"},
+            ],
+            "questions": [
+                {"q": u"远处小目标和门口遮挡，分别拖累检测还是跟踪？", "hint": u"分开报指标。"},
+                {"q": u"低分框参与关联后，身份切换下降还是误关联变多？", "hint": u"给身份切换次数，不要只用 mAP。"},
+                {"q": u"测试相机是否出现在训练视频里？", "hint": u"重叠则不能称为跨场景。"},
+            ],
+            "coach_ref": u"与直接部署通用检测器不同，本文面向校园监控中的逆光、远处行人和门口遮挡。检测端针对行人尺度，跟踪端处理遮挡时的框关联。检测看 mAP@0.5，跟踪看身份切换，两者不要写成一个「效果较好」。",
+            "zh": u"校园监控里，通用行人检测器在逆光、遮挡和远处小目标上漏检，遮挡后轨迹也容易中断。本文把检测和跟踪分开，分析端只使用轨迹点。检测和跟踪的指标分开报告。已有的 86.4% 只说明检测。夜间成像和是否保存原视频仍是局限。",
+            "en": u"Generic pedestrian detectors miss small or backlit people, and occlusion breaks tracks. This thesis separates detection and association, then reads analytics from track points only. Report detection and identity switches separately. Night imaging and raw-video retention remain limits.",
+        }
+    return {
+        "kind": u"按题目展开",
+        "problem": u"「%s」需要写清输入是什么、现有方法卡在哪一个可观察现象、准备用哪一项指标证明改动有效。" % t,
+        "method": u"方法只保留一条主线：输入、输出、与最强基线差在哪一个模块。不要把题目里没有的跟踪或翻译写进去。",
+        "metric": u"至少报告主指标和一个失败子集。对照必须是同数据划分上的基线。表里没有的百分点不要编。",
+        "chapters": [
+            {"title": u"第1章 绪论", "points": u"用「%s」的一个具体失败开头，贡献条目注明由哪张表检验。" % t, "cite": u"删掉与题目无关的背景段落。"},
+            {"title": u"第2章 相关工作", "points": u"两条到三条技术线，比较数据、指标和失败条件，最后写本文不做什么。", "cite": u"不要按年份流水账。"},
+            {"title": u"第3章 方法", "points": u"只写「%s」的输入、关键模块、输出，以及和基线的一处差异。" % t, "cite": u"用「因为某现象，所以改这一处」。"},
+            {"title": u"第4章 实验", "points": u"数据来源、划分、主指标、子集指标、一次只改变一个因素的消融、失败案例分布。", "cite": u"没有的实验写尚未完成。"},
+            {"title": u"第5章 总结", "points": u"复述已有数字，并写数据覆盖不到的情形和指标解释不了的情形。", "cite": u"不要用「意义重大」收尾。"},
+        ],
+        "questions": [
+            {"q": u"「%s」里，现有方法最容易失败的输入长什么样？" % t, "hint": u"给出一个能看见的例子。"},
+            {"q": u"删掉你的改动后，主指标和子集指标哪一个会先掉？", "hint": u"用消融，不要用形容词。"},
+            {"q": u"训练和测试是否共享同一批样本或同一场景？", "hint": u"共享则只能叫拟合。"},
+        ],
+        "coach_ref": u"针对「%s」，现有做法的问题要落到一个能看见的失败。本文只改与该失败对应的一个环节，并在同一数据划分上与基线对比。主指标说明总体，子集指标说明这个失败有没有减轻。实验没跑完就写预期，不要先写百分点。" % t,
+        "zh": u"「%s」先写清输入、失败现象和方法差异。本文给出一条主线，并在同一划分上报告主指标和失败子集。具体百分点只能来自实验表。局限写数据覆盖不到的情形。" % t,
+        "en": u"State the input, the observable failure, and the single change. Report a main metric and a failure-subset metric on one split. Copy numbers only from the result table.",
     }
 
 
 def demo_outline(topic, text, model_id):
     topic = topic or _guess_topic(text, "")
-    chapters = [
-        {
-            "title": u"第1章 绪论",
-            "points": u"交代校园安防/人流管理背景、现有检测器在遮挡与小目标上的不足、本文研究目标与章节安排。",
-            "cite": u"建议引用智慧城市安防综述 + 检测领域里程碑工作，避免只堆产品宣传。",
-        },
-        {
-            "title": u"第2章 相关工作",
-            "points": u"按两阶段检测、YOLO 系列、Transformer 检测器、多目标跟踪四条线对比，指出校园场景缺口。",
-            "cite": u"每条技术线至少 2 篇代表性文献，末段明确“本文定位”。",
-        },
-        {
-            "title": u"第3章 方法设计",
-            "points": u"给出系统架构图：数据增强、检测、跟踪、轨迹分析。用公式/伪代码说明与现有方案的差异。",
-            "cite": u"方法章引用应服务于“为何这样改”，不要把文献综述再写一遍。",
-        },
-        {
-            "title": u"第4章 实验验证",
-            "points": u"数据集划分、评价指标、对比实验、消融实验、可视化与误差分析、效率评估。",
-            "cite": u"对比方法需给出出处；若复现，注明官方实现或自复现。",
-        },
-        {
-            "title": u"第5章 总结与展望",
-            "points": u"归纳贡献、承认局限（夜间、隐私、极端遮挡），给出可检验的后续工作。",
-            "cite": u"展望可点到新兴方向文献，但不要引入未实验的夸大结论。",
-        },
-    ]
+    info = _brief(topic, text)
+    chapters = info["chapters"]
+    questions = info["questions"]
     papers = [
-        {u"title": u"YOLOv3: An Incremental Improvement", u"meta": u"Redmon & Farhadi, arXiv, 2018", u"why": u"单阶段检测演进的基础对照。"},
-        {u"title": u"YOLOv8 官方技术报告与 Ultralytics 实现", u"meta": u"Jocher et al., 2023", u"why": u"本文基线模型来源，需说明版本与配置。"},
-        {u"title": u"ByteTrack: Multi-Object Tracking by Associating Every Detection Box", u"meta": u"Zhang et al., ECCV 2022", u"why": u"跟踪模块核心方法。"},
-        {u"title": u"Simple Online and Realtime Tracking with a Deep Association Metric (DeepSORT)", u"meta": u"Wojke et al., ICIP 2017", u"why": u"作为跟踪对照，突出 ByteTrack 的低分框关联。"},
-        {u"title": u"Focal Loss for Dense Object Detection", u"meta": u"Lin et al., ICCV 2017", u"why": u"解释小目标/类别不平衡时可引用。"},
-        {u"title": u"智慧校园视频监控中的行人感知综述", u"meta": u"国内学报/会议综述，2022–2024", u"why": u"把问题落到校园场景，而不是通用 COCO。"},
-        {u"title": u"CrowdHuman / CityPersons 等行人检测基准", u"meta": u"Shao et al.; Zhang et al.", u"why": u"讨论域迁移与自建校园数据的必要性。"},
-        {u"title": u"GB/T 7714—2025 信息与文献 参考文献著录规则", u"meta": u"国家标准", u"why": u"本科论文参考文献格式依据。"},
-    ]
-    questions = [
-        {
-            "q": u"校园逆光、遮挡与远距离小目标条件下，轻量检测器如何在精度与边缘设备帧率之间折中？",
-            "hint": u"可从输入尺度、蒸馏、检测头解耦切入，避免只调参。",
-        },
-        {
-            "q": u"低分检测框对轨迹连续性的贡献有多大，是否会引入身份切换？",
-            "hint": u"用 IDF1、ID Switch 做对照，而不是只看 MOTA。",
-        },
-        {
-            "q": u"轨迹热力与越界事件如何在保护人脸隐私的前提下服务校园管理？",
-            "hint": u"可讨论模糊化、只存轨迹点、本地推理。",
-        },
+        {"title": info["kind"], "meta": u"离线推断，按题目「%s」选择文献，不套另一篇论文" % topic, "why": info["method"]},
+        {"title": u"该方向的基线论文", "meta": u"写明你复现的版本和配置", "why": info["metric"]},
+        {"title": u"同一任务、不同数据假设的工作", "meta": u"用来写分歧", "why": info["problem"]},
+        {"title": u"GB/T 7714—2025 信息与文献 参考文献著录规则", "meta": u"国家标准", "why": u"只约束文献格式，不充当创新点。"},
     ]
     return {
-        "mode": "demo",
+        "mode": "offline",
+        "source": "offline",
         "topic": topic,
         "chapters": chapters,
         "papers": papers,
         "questions": questions,
-        "model": model_name(model_id),
+        "model": "",
     }
 
 
-def demo_coach(chapter, answer, model_id):
+def demo_coach(chapter, answer, model_id, topic=u"", text=u""):
     chapter = chapter or u"绪论 / 创新点"
+    info = _brief(topic or chapter, (answer or u"") + u"\n" + (text or u""))
     has_ans = bool((answer or "").strip())
     return {
         "mode": "offline",
+        "source": "offline",
         "chapter": chapter,
-        "prompt": u"请阐述本研究的核心创新点与现有方案的差异。要求：1）点明场景约束；2）说明方法组合而非口号；3）用一句可检验的实验预期收束。",
-        "reference": u"与直接部署通用 YOLOv8 不同，本文面向校园监控的逆光与远距离小目标，设计了针对行人尺度的多尺度增强，并将 ByteTrack 的低分框关联引入门口与走廊高遮挡场景，使轨迹中断率下降。该差异将通过与 YOLOv8n+DeepSORT 的 ID Switch 对比加以验证，而不是仅比较 mAP。",
-        "strengths": [
-            u"能够把问题落到校园场景，而不是复述算法名词。",
-            u"尝试同时覆盖检测与跟踪，方向正确。",
-        ]
-        if has_ans
-        else [],
+        "prompt": u"请用一段话说明「%s」：问题现象、和基线的一处差异、准备用什么指标证明。按「%s」写，不要套另一篇论文。" % (topic or chapter, info["kind"]),
+        "reference": info["coach_ref"],
+        "strengths": [info["problem"], info["method"]] if has_ans else [],
         "weaknesses": [
-            u"创新点仍偏“组合现有模块”，未写清每一个改动解决哪一个可观察问题。",
-            u"缺少可检验表述（指标、对照、场景）。",
-        ]
-        if has_ans
-        else [u"尚未作答。建议先写 180–250 字，包含场景、方法差异、验证指标三要素。"],
-        "rewrite": u"现有校园监控方案多直接套用通用检测器，在逆光与远处行人上召回不足，且遮挡后轨迹易中断。针对该问题，本文在检测端引入面向行人尺度的增强与损失加权，在跟踪端采用低分框关联以降低门口拥堵时的身份切换。预期在自建校园集上，mAP@0.5 不低于基线 +3 个百分点，ID Switch 明显下降。",
-        "next_chapter": u"相关工作：请用一段话说明本文与 YOLOv8 + DeepSORT 基线的文献定位。",
-        "model": model_name(model_id),
+            u"判断没有放在段首，或改动没有对应到指标。",
+            u"文中没有的百分点不要补进去。",
+        ] if has_ans else [u"还没有作答。先把参考表述里的数据和基线名称换成你自己的，再提交。"],
+        "rewrite": info["coach_ref"],
+        "next_chapter": info["chapters"][1]["points"],
+        "model": "",
     }
 
 
@@ -514,20 +538,16 @@ def demo_polish(text, filename, model_id):
 
 def demo_abstract(text, requirement, model_id):
     req = requirement or u"本科毕业论文摘要"
+    info = _brief(_guess_topic(text, u""), text or u"")
     return {
-        "mode": "demo",
+        "mode": "offline",
+        "source": "offline",
         "requirement": req,
-        "zh": u"校园监控依赖人工值守，通用行人检测器在逆光、遮挡与远距离小目标场景下漏检明显。本文设计并实现基于 YOLOv8 的校园行人检测与轨迹分析系统：在检测端引入面向行人尺度的数据增强，在跟踪端采用 ByteTrack 低分框关联，并输出区域热力与越界事件。实验在含 8 个场景、12,400 张图像的自建校园数据集上进行。结果表明，模型 mAP@0.5 达到 86.4%，较对比基线提升 4.7 个百分点，并可满足近实时分析需求。研究仍受夜间成像与隐私保护约束，后续将补充红外数据与本地脱敏推理。",
-        "en": u"Manual campus surveillance is error-prone, and generic pedestrian detectors degrade under backlight, occlusion, and small-scale targets. This thesis presents a YOLOv8-based campus pedestrian detection and trajectory analysis system that combines scale-aware augmentation, ByteTrack association, and heatmap/event analytics. Experiments on a self-collected dataset (8 scenes, 12,400 images) show 86.4% mAP@0.5, 4.7 points above the baseline, with near real-time throughput. Night-time imaging and privacy constraints remain limitations.",
-        "keywords_zh": [u"行人检测", u"YOLOv8", u"多目标跟踪", u"智慧校园", u"轨迹分析"],
-        "keywords_en": [
-            "Pedestrian Detection",
-            "YOLOv8",
-            "Multi-Object Tracking",
-            "Smart Campus",
-            "Trajectory Analysis",
-        ],
-        "model": model_name(model_id),
+        "zh": info["zh"],
+        "en": info["en"],
+        "keywords_zh": [info["kind"], u"基线对照", u"失败子集"],
+        "keywords_en": ["baseline", "failure subset"],
+        "model": "",
     }
 
 
@@ -717,29 +737,28 @@ def demo_pipeline(text, filename, model_id):
     }
 
 
-def demo_chat(scene, question, model_id):
-    q = question or ""
+def demo_chat(scene, question, model_id, topic=u"", text=u""):
+    q = question or text or u""
+    info = _brief(topic or q, q + u"\n" + (text or u""))
+    lines = [c["title"] + u"：" + c["points"] for c in info["chapters"]]
+    qs = [item["q"] for item in info["questions"]]
+    body = (
+        u"【离线推断】按「%s」来写，类型是%s。\n\n%s\n\n%s\n\n%s\n\n%s"
+        % (topic or (q[:36] or info["kind"]), info["kind"], info["problem"], info["method"], info["metric"], u"\n".join(lines))
+    )
     if u"大纲" in q:
-        body = u"本科论文大纲建议五章：绪论（问题与贡献）、相关工作（差异表）、方法、实验（对比+消融+失败案例）、总结。每章先写“本章要回答的一个问题”，再列小节，避免先堆材料。"
+        body = u"【离线推断】大纲按「%s」展开。\n\n%s\n\n研究问题：\n%s" % (info["kind"], u"\n\n".join(lines), u"\n".join(qs))
     elif u"摘要" in q:
-        body = u"摘要按五句写：问题、方法、数据、主要指标、局限。不要出现“意义重大”“首次尝试探索”。英文摘要与中文信息对齐，时态用一般现在/过去即可。"
+        body = u"【离线推断】摘要只写表里已有的事实。\n\n%s\n\n%s" % (info["zh"], info["en"])
     elif u"文献" in q:
-        body = u"文献总结不要按时间流水账。按技术线分组：检测、跟踪、校园/安防应用。每组用“共识—分歧—空白—本文位置”四句收束，并预留 2 篇 近两年文献。"
-    elif u"降重" in q or u"查重" in q:
-        body = u"降重的正确方式是改写知识结构：换成你的数据、你的失败案例、你的参数表，而不是同义替换。方法段用自己的流程图编号解释。规范重合度高时先查是否大段改写了开源 README。"
-    elif u"开题" in q:
-        body = u"开题报告抓住三问：研究什么现象、现有方法卡在哪、你准备用什么证据证明你的改动有效。附 12 周计划与风险（数据、算力、伦理）。"
-    else:
-        scene_map = {
-            "writing": u"写作上先定“读者能带走的一句话”，再扩段落。每段只服务一个主张，主张后面必须跟证据（文献、公式、实验）。",
-            "lit": u"文献辅助时建立表格：年份、任务、数据、指标、局限。创新点从“局限列”长出来，而不是从形容词长出来。",
-            "guide": u"选题宁小勿大。校园行人检测可以收窄到“门口遮挡下的轨迹连续”或“边缘设备上的小目标召回”。",
-        }
-        body = scene_map.get(scene, scene_map["writing"])
+        body = u"【离线推断】文献按技术线，不要按年份。\n\n%s\n\n%s" % (info["problem"], info["method"])
+    elif u"答辩" in q:
+        body = u"【离线推断】答辩先回答这三问，每问约 40 秒。\n\n%s\n\n%s" % (u"\n".join(qs), info["metric"])
     return {
-        "mode": "demo",
-        "reply": body + u"\n\n（当前为演示模式回复；配置智谱/DeepSeek/千问等 API 密钥后可切换为在线推理。）",
-        "model": model_name(model_id),
+        "mode": "offline",
+        "source": "offline",
+        "reply": body,
+        "model": "",
     }
 
 
@@ -816,10 +835,10 @@ def run_module(action, payload):
     llm_text, demo = call_llm(model_id, sys_p, user, history if action == "chat" else None)
 
     fallbacks = {
-        "chat": lambda: demo_chat(extra.get("scene") or "writing", extra.get("question") or text, model_id),
+        "chat": lambda: demo_chat(extra.get("scene") or "writing", extra.get("question") or text, model_id, extra.get("topic") or "", text),
         "evaluate": lambda: demo_evaluate(text, filename, model_id),
         "outline": lambda: demo_outline(extra.get("topic"), text, model_id),
-        "coach": lambda: demo_coach(extra.get("chapter"), extra.get("answer"), model_id),
+        "coach": lambda: demo_coach(extra.get("chapter"), extra.get("answer"), model_id, extra.get("topic") or "", text),
         "polish": lambda: demo_polish(text, filename, model_id),
         "abstract": lambda: demo_abstract(text, extra.get("requirement"), model_id),
         "refs": lambda: demo_refs(text, extra.get("standard"), model_id),
@@ -857,6 +876,32 @@ def run_module(action, payload):
         parsed["demo"] = False
         parsed["model"] = model_name(model_id)
         parsed["raw"] = llm_text
+        topic = extra.get("topic") or _guess_topic(text, filename)
+        if action == "outline":
+            chapters = parsed.get("chapters") or []
+            bodies = []
+            for c in chapters:
+                if isinstance(c, dict):
+                    body = c.get("points") or c.get("content") or c.get("summary") or u""
+                    if not c.get("points"):
+                        c["points"] = body
+                    bodies.append(body)
+                else:
+                    bodies.append(u"%s" % c)
+            if not parsed.get("questions") and parsed.get("research_questions"):
+                parsed["questions"] = [
+                    {u"q": q} if not isinstance(q, dict) else q
+                    for q in parsed.get("research_questions") or []
+                ]
+            thin = sum(len(b) for b in bodies) < 220 or not any(u"。" in b for b in bodies)
+            if thin:
+                info = demo_outline(topic, text, model_id)
+                parsed["sections"] = [{u"title": u"离线推断", u"p": u"上面是模型给出的章名。下面按「%s」把每一章写成可以接着写的段落。" % topic}]
+                parsed["sections"].extend([{u"title": c["title"], u"p": c["points"]} for c in info["chapters"]])
+        if action == "chat":
+            reply = parsed.get("reply") or u""
+            if len(reply) < 180:
+                parsed["reply"] = (reply + u"\n\n" + demo_chat(extra.get("scene") or "writing", extra.get("question") or text, model_id, topic, text)["reply"]).strip()
         return parsed
 
     packed = {
@@ -865,8 +910,15 @@ def run_module(action, payload):
         "model": model_name(model_id),
         "llm_text": llm_text,
     }
+    topic = extra.get("topic") or _guess_topic(text, filename)
     if action == "chat":
         packed["reply"] = llm_text
+        if len(llm_text) < 180:
+            packed["reply"] = (llm_text + u"\n\n" + demo_chat(extra.get("scene") or "writing", extra.get("question") or text, model_id, topic, text)["reply"]).strip()
     else:
         packed["sections"] = [{u"title": u"模型输出", u"pre": llm_text}]
+        if action == "outline" and len(llm_text) < 220:
+            info = demo_outline(topic, text, model_id)
+            packed["sections"].append({u"title": u"离线推断", u"p": u"模型回复过短。下面按「%s」展开。" % topic})
+            packed["sections"].extend([{u"title": c["title"], u"p": c["points"]} for c in info["chapters"]])
     return packed

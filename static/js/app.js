@@ -239,7 +239,7 @@
   function sectionsHtml(d) {
     if (!d) return "";
     var badge = originBadge(d);
-    if (d.reply) return badge + "<p>" + esc(d.reply) + "</p>";
+    if (d.reply) return badge + "<div class='pre'>" + esc(d.reply) + "</div>";
     var html = "";
     if (d.score != null) html += "<h3>综合评分 " + esc(d.score) + (d.overlap != null ? " · 规范重合度 " + esc(d.overlap) + "%" : "") + "</h3>";
     if (d.summary) html += "<p>" + esc(d.summary) + "</p>";
@@ -283,7 +283,7 @@
     if (d.sections) {
       d.sections.forEach(function (s) {
         html += "<h4>" + esc(s.title || "") + "</h4>";
-        if (s.p) html += "<p>" + esc(s.p) + "</p>";
+        if (s.p) html += "<p>" + esc(s.p).replace(/\n/g, "<br>") + "</p>";
         if (s.pre) html += "<div class='pre'>" + esc(s.pre) + "</div>";
         if (s.items) html += "<ul>" + s.items.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
         if (s.pairs) {
