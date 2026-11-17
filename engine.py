@@ -396,72 +396,81 @@ def demo_evaluate(text, filename, model_id):
 
 
 def _brief(topic, text):
-    blob = (topic or u"") + u"\n" + (text or u"")
     t = topic or _guess_topic(text, u"") or u"待定题目"
-    if any(k in blob for k in (u"病虫", u"大豆", u"叶片", u"作物", u"病害", u"植物", u"农业")):
-        return {
-            "kind": u"田间叶片病害",
-            "problem": u"田间拍摄的「%s」里，早期病斑小，光照和品种差很大。直接套通用检测器时，小病斑召回低，相似病害还会混成一类。" % t,
-            "method": u"流水线是采集与标注、叶片裁剪、病斑检测或分割、按类别输出位置和置信度。跟踪、轨迹和 ByteTrack 与本题无关。",
-            "metric": u"检测报 mAP@0.5 和按病害类别的召回，分类报宏平均 F1 与混淆矩阵，并单列早期小病斑。没有实验表就不要先写百分点。",
-            "chapters": [
-                {"title": u"第1章 绪论", "points": u"写清「%s」发生在田间哪一环节，现有人工巡田漏掉早期病斑。贡献写成可检验条目，并预告实验表。" % t, "cite": u"引用田间病害数据与实验室叶片数据的差距，不要写校园监控。"},
-                {"title": u"第2章 相关工作", "points": u"分公开叶片数据集、病斑检测或分割、农业边缘部署三条线。每条线收束为共识、分歧、空白和本文位置。", "cite": u"本文位置只写面向田间叶片的早期病斑，不要写成新网络，除非表里有对照。"},
-                {"title": u"第3章 方法", "points": u"输入是田间叶片图像。模块是标注规范、检测或分割骨干、类别头和阈值。画出与官方默认权重的差异。方法章只保留叶片检测或分割，不要加入轨迹模块。", "cite": u"方法章只解释为什么提高小病斑采样。"},
-                {"title": u"第4章 实验", "points": u"按地块或拍摄日期划分。表列类别样本量、mAP 或 F1、小病斑召回、相似病害混淆和速度。消融一次只动一个因素。", "cite": u"同一株叶子不能同时出现在训练和测试。"},
-                {"title": u"第5章 总结", "points": u"只总结检测得到的数字和做不到的事：夜间、新品种、未见病害。", "cite": u"展望不要写「意义重大」。"},
-            ],
-            "questions": [
-                {"q": u"早期小病斑的召回比中后期低多少？这一差距是漏检还是标注噪声？", "hint": u"按短边小于 32 像素的子集单独列表。"},
-                {"q": u"外观接近的两类病害主要错到谁？", "hint": u"用混淆矩阵，不要只给总准确率。"},
-                {"q": u"训练和测试是否按地块分开？", "hint": u"同一株作物的不同叶子同时进入两侧，不能称为泛化。"},
-            ],
-            "coach_ref": u"与直接使用通用检测器不同，本文面向田间叶片：早期病斑尺度小，相似病害外观接近，同一地块光照变化大。检测端按叶片裁剪并提高小目标采样，输出各类病害的框和置信度。验证看按类别召回、小病斑子集和混淆矩阵。跟踪不属于本题。",
-            "zh": u"田间叶片的早期病斑小，光照和品种变化大，通用检测器漏检明显，相似病害也容易混淆。本文给出标注规范，并提高小病斑采样权重。实验按地块划分，报告 mAP@0.5、按类别召回和小病斑子集。表中没有的数字不写入摘要。夜间、新品种和未见病害仍是局限。",
-            "en": u"Early lesions on field leaves are small, and illumination and cultivar shift cause generic detectors to miss them or confuse similar diseases. This thesis states the labeling rule and biases training toward small lesions. Splits follow field plots. Report mAP@0.5, per-class recall, and the small-lesion subset. Do not invent numbers. Night imaging, new cultivars, and unseen diseases remain limits.",
-        }
-    if any(k in blob for k in (u"行人", u"轨迹", u"跟踪", u"校园监控", u"安防")):
-        return {
-            "kind": u"校园行人",
-            "problem": u"「%s」若直接套通用检测器，逆光、门口遮挡和远处小目标会漏检；只报检测框也无法回答轨迹是否被打断。" % t,
-            "method": u"检测端处理尺度和遮挡，跟踪端把框变成轨迹，分析端只消费轨迹点。三个模块各自对应一个现象。",
-            "metric": u"检测用 mAP@0.5，跟踪单独报身份切换。已有文稿中的 86.4% 只说明检测，不能代替跟踪。",
-            "chapters": [
-                {"title": u"第1章 绪论", "points": u"写清漏检发生在什么条件下，本文做检测、跟踪还是两者。", "cite": u"贡献条目对应后文的表。"},
-                {"title": u"第2章 相关工作", "points": u"检测器、跟踪器、校园场景三条线，写明不解决人脸识别。", "cite": u"每条线用共识、分歧、空白、本文位置收束。"},
-                {"title": u"第3章 方法", "points": u"检测输出框，跟踪做关联，分析只读轨迹。画出与官方检测器加简单排序跟踪的差异。", "cite": u"不要把三个模块合成一句「结合了深度学习」。"},
-                {"title": u"第4章 实验", "points": u"检测对照和跟踪对照分开列表。消融一次只关一个模块，并给出失败案例占比。", "cite": u"测试相机不能出现在训练视频里还不说明。"},
-                {"title": u"第5章 总结", "points": u"检测数字和跟踪数字分开写。局限写夜间，以及保存的是原视频还是轨迹点。", "cite": u"没有的实验写成尚未完成。"},
-            ],
-            "questions": [
-                {"q": u"远处小目标和门口遮挡，分别拖累检测还是跟踪？", "hint": u"分开报指标。"},
-                {"q": u"低分框参与关联后，身份切换下降还是误关联变多？", "hint": u"给身份切换次数，不要只用 mAP。"},
-                {"q": u"测试相机是否出现在训练视频里？", "hint": u"重叠则不能称为跨场景。"},
-            ],
-            "coach_ref": u"与直接部署通用检测器不同，本文面向校园监控中的逆光、远处行人和门口遮挡。检测端针对行人尺度，跟踪端处理遮挡时的框关联。检测看 mAP@0.5，跟踪看身份切换，两者不要写成一个「效果较好」。",
-            "zh": u"校园监控里，通用行人检测器在逆光、遮挡和远处小目标上漏检，遮挡后轨迹也容易中断。本文把检测和跟踪分开，分析端只使用轨迹点。检测和跟踪的指标分开报告。已有的 86.4% 只说明检测。夜间成像和是否保存原视频仍是局限。",
-            "en": u"Generic pedestrian detectors miss small or backlit people, and occlusion breaks tracks. This thesis separates detection and association, then reads analytics from track points only. Report detection and identity switches separately. Night imaging and raw-video retention remain limits.",
-        }
+    topic_only = topic or u""
+    body = (text or u"").replace(u"摘要：", u"").replace(u"关键词：", u"")
+    rows = [
+        (u"plant", u"田间病害或作物表型", (u"病虫", u"病害", u"病斑", u"锈病", u"虫害", u"叶病", u"霉病", u"叶片", u"作物", u"农业", u"植物")),
+        (u"med", u"医学影像或临床文本", (u"医学", u"病灶", u"影像", u"结节", u"诊断", u"病理", u"CT", u"MRI", u"超声")),
+        (u"text", u"文本或语言任务", (u"翻译", u"情感", u"评论", u"文本分类", u"问答", u"语料", u"语言模型")),
+        (u"rec", u"推荐", (u"推荐", u"协同过滤", u"点击率")),
+        (u"forecast", u"按时间预测", (u"预测", u"时序", u"负荷", u"销量", u"客流")),
+        (u"track", u"检测与轨迹", (u"行人", u"轨迹", u"跟踪", u"监控", u"安防")),
+        (u"seg", u"图像分割", (u"分割",)),
+        (u"detect", u"检测或识别", (u"检测", u"识别", u"监测")),
+        (u"cls", u"分类", (u"分类",)),
+    ]
+    fam, kind = u"plain", u"按题目展开"
+
+    def _hit(source):
+        for key, label, words in rows:
+            if source and any(w in source for w in words):
+                return key, label
+        return None
+
+    picked = _hit(topic_only) or _hit(body)
+    if picked:
+        fam, kind = picked
+    has_score = u"86.4" in (text or u"") or u"4.7" in (text or u"")
+    spec = {
+        u"plant": (u"田间或自然光下的图像", u"裁剪到目标区域并提高小目标或少数类的采样", u"按类别召回和混淆矩阵，检测再报 mAP@0.5", u"按地块或植株划分", u"目标很小、两类外观接近、逆光", u"不写施药建议；题目里没有跟踪就不要写轨迹", [u"公开数据集和真实环境的差距", u"检测或分类基线", u"边缘设备上的速度和误报"]),
+        u"med": (u"影像或文本，并能追溯到病人", u"只改和漏诊对应的一处", u"敏感度、特异度或 Dice，并单列少见类型", u"按病人划分，不要按切片随机拆", u"少见类型、不同设备", u"不要写成可以临床使用", [u"采集设备是否相同", u"同任务强基线", u"按病人划分的工作"]),
+        u"text": (u"句子、评论或文档", u"只改和错例对应的一处，例如领域词或标签", u"分类报宏平均 F1；翻译对照参考译文；问答要能指回原句", u"同一文档的相邻句不要分到两侧", u"否定句、领域词、过长的句子", u"不要改成图像检测", [u"常用基线", u"不同数据领域的一篇", u"近两年的强基线"]),
+        u"rec": (u"用户与物品的交互记录", u"只改排序或召回里的一处", u"Recall@K 或 NDCG，并单独看冷启动", u"按时间切，不能使用未来的交互", u"冷启动、热门物品占满列表", u"不要把随机划分写成线上效果", [u"协同过滤或实际基线", u"数据规模接近的一篇", u"近两年的一篇"]),
+        u"forecast": (u"历史序列", u"只改窗口、外部变量或结构中的一处", u"MAE 或 RMSE，并单列高峰时段", u"按时间先后划分，不能打乱后抽测试", u"节假日、突变、没见过的区间", u"不要把训练拟合写成预测能力", [u"序列任务常用基线", u"外部变量不同的一篇", u"近两年的一篇"]),
+        u"track": (u"视频或连续帧", u"检测和轨迹关联分开写", u"文稿里的 86.4% 只说明检测，跟踪另报身份切换" if has_score else u"检测报 mAP@0.5，跟踪另报身份切换；正文没有这些数字就不要先写", u"测试相机不要出现在训练集里", u"遮挡、小目标、离开画面再回来", u"题目里没有人脸识别就不要写", [u"检测器及版本", u"跟踪基线", u"场景密度接近的公开数据"]),
+        u"seg": (u"图像和标注掩膜", u"只改边界或小区域对应的一处", u"Dice 或 IoU，并单列小区域", u"同一主体的相邻切片不要分到两侧", u"细边界、小区域、标注不一致", u"不要只用总准确率", [u"分割基线", u"标注规范不同的一篇", u"近两年的一篇"]),
+        u"detect": (u"图像", u"相对官方默认权重，只改和漏检对应的一处", u"mAP@0.5 与按类别召回，并单列困难样本", u"同一场景不要同时出现在训练和测试", u"小目标、遮挡、分布不同的场景", u"题目里没有跟踪就不要写轨迹", [u"官方检测器及版本", u"同任务不同数据", u"近两年的一篇"]),
+        u"cls": (u"一条样本", u"只改和易混类别对应的一处", u"宏平均 F1 和混淆矩阵", u"近重复样本不要分到两侧", u"容易混淆的两类、样本很少的类", u"不要写成检测加跟踪", [u"分类基线", u"类别定义不同的一篇", u"近两年的一篇"]),
+        u"plain": (u"实际采集的记录", u"只改和一个可观察失败对应的一处", u"一个主指标加一个失败子集，用该方向已有的指标名", u"测试样本不能在训练里出现过；有时间顺序就按时间切", u"最容易错的三类输入", u"题目里没有的任务不要写进方法", [u"最常用的基线", u"数据假设不同的一篇", u"近两年的一篇"]),
+    }[fam]
+    inp, change, metric, split, fail, not_do, lines = spec
+    chapters = [
+        {"title": u"第1章 绪论", "points": u"用「%s」的一个具体失败开头。贡献对应后文的表。%s。" % (t, not_do), "cite": lines[0]},
+        {"title": u"第2章 相关工作", "points": u"；".join(lines) + u"。最后写本文不做什么。", "cite": u"不要按年份流水账。"},
+        {"title": u"第3章 方法", "points": u"输入是%s。%s。" % (inp, change), "cite": u"画出和基线差在哪一步。"},
+        {"title": u"第4章 实验", "points": u"%s。报告%s。失败案例覆盖%s。" % (split, metric, fail), "cite": u"消融一次只改一个因素。"},
+        {"title": u"第5章 总结", "points": u"只复述表里已有的数字。局限是%s。" % fail, "cite": u"没有的实验写成尚未完成。"},
+    ]
+    questions = [
+        {"q": u"「%s」里，%s分别把结果拉低多少？" % (t, fail), "hint": u"分列，不要只给一个总数。"},
+        {"q": u"删掉这一处改动后，主指标和失败子集哪一个先掉？", "hint": u"用消融。"},
+        {"q": split, "hint": u"没有分开就只能叫拟合。"},
+    ]
+    case = (
+        u"试用案例（离线推断，题目「%s」，类型是%s）。数字格写待填，不要先写百分点。\n\n"
+        u"一、场景\n输入是%s。最容易失败的是%s。先写清数据从哪来、一条样本长什么样。\n\n"
+        u"二、基线只改一处\n基线的名称、版本、输入尺寸留空，由你填入真正复现的配置。本文只改：%s。划分、轮数和阈值与基线相同。\n"
+        u"1. 固定划分：%s。\n2. 先跑基线，主指标和失败子集记在同一张表。\n3. 加上这一处再跑一遍。\n4. 消融时只去掉这一处。\n\n"
+        u"三、实验表\n组别 | 划分 | 主指标 | 失败子集 | 差别\n"
+        u"基线 | 同一划分 | 待填 | 待填 | 默认配置\n本文 | 同一划分 | 待填 | 待填 | 只改一处\n去掉该改动 | 同一划分 | 待填 | 待填 | 消融\n"
+        u"主指标：%s。\n\n"
+        u"四、可粘贴的方法段\n针对「%s」，输入是%s。现有做法在「%s」上容易失败。本文只改一处：%s。实验与基线使用同一划分，报告主指标和失败子集。表中未填的数字不写入正文。%s。\n\n"
+        u"五、失败案例\n从测试集抽出：%s。每类写条数、错成什么、占比、漏掉的后果。没数过就写尚未统计。\n\n"
+        u"六、不要写进去\n%s。"
+        % (t, kind, inp, fail, change, split, metric, t, inp, fail, change, not_do, fail, not_do)
+    )
     return {
-        "kind": u"按题目展开",
-        "problem": u"「%s」需要写清输入是什么、现有方法卡在哪一个可观察现象、准备用哪一项指标证明改动有效。" % t,
-        "method": u"方法只保留一条主线：输入、输出、与最强基线差在哪一个模块。不要把题目里没有的跟踪或翻译写进去。",
-        "metric": u"至少报告主指标和一个失败子集。对照必须是同数据划分上的基线。表里没有的百分点不要编。",
-        "chapters": [
-            {"title": u"第1章 绪论", "points": u"用「%s」的一个具体失败开头，贡献条目注明由哪张表检验。" % t, "cite": u"删掉与题目无关的背景段落。"},
-            {"title": u"第2章 相关工作", "points": u"两条到三条技术线，比较数据、指标和失败条件，最后写本文不做什么。", "cite": u"不要按年份流水账。"},
-            {"title": u"第3章 方法", "points": u"只写「%s」的输入、关键模块、输出，以及和基线的一处差异。" % t, "cite": u"用「因为某现象，所以改这一处」。"},
-            {"title": u"第4章 实验", "points": u"数据来源、划分、主指标、子集指标、一次只改变一个因素的消融、失败案例分布。", "cite": u"没有的实验写尚未完成。"},
-            {"title": u"第5章 总结", "points": u"复述已有数字，并写数据覆盖不到的情形和指标解释不了的情形。", "cite": u"不要用「意义重大」收尾。"},
-        ],
-        "questions": [
-            {"q": u"「%s」里，现有方法最容易失败的输入长什么样？" % t, "hint": u"给出一个能看见的例子。"},
-            {"q": u"删掉你的改动后，主指标和子集指标哪一个会先掉？", "hint": u"用消融，不要用形容词。"},
-            {"q": u"训练和测试是否共享同一批样本或同一场景？", "hint": u"共享则只能叫拟合。"},
-        ],
-        "coach_ref": u"针对「%s」，现有做法的问题要落到一个能看见的失败。本文只改与该失败对应的一个环节，并在同一数据划分上与基线对比。主指标说明总体，子集指标说明这个失败有没有减轻。实验没跑完就写预期，不要先写百分点。" % t,
-        "zh": u"「%s」先写清输入、失败现象和方法差异。本文给出一条主线，并在同一划分上报告主指标和失败子集。具体百分点只能来自实验表。局限写数据覆盖不到的情形。" % t,
-        "en": u"State the input, the observable failure, and the single change. Report a main metric and a failure-subset metric on one split. Copy numbers only from the result table.",
+        "kind": kind,
+        "problem": u"「%s」的输入是%s。%s会让现有做法失败。没有出现在文稿里的百分点不要编。" % (t, inp, fail),
+        "method": u"方法只保留一条主线：%s。%s。" % (change, not_do),
+        "metric": metric + u"。对照必须是同一划分上的基线。",
+        "chapters": chapters,
+        "questions": questions,
+        "case": case,
+        "coach_ref": case,
+        "zh": u"「%s」的输入是%s。本文%s。实验上，%s，并报告%s。表里没有的数字不写入摘要。" % (t, inp, change, split, metric),
+        "en": u"For the stated topic, name the input, one failure, and one change. Copy numbers only from the result table.",
     }
 
 
@@ -483,6 +492,7 @@ def demo_outline(topic, text, model_id):
         "chapters": chapters,
         "papers": papers,
         "questions": questions,
+        "sections": [{u"title": u"试用案例", u"pre": info.get("case") or u""}],
         "model": "",
     }
 
