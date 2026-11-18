@@ -135,7 +135,7 @@ DEMO_THESIS = """题目：基于深度学习的校园行人检测与轨迹分析
 
 SYSTEM_PROMPTS = {
     "chat": "你是论小研，面向本科生与研究生的科研论文写作助手。用中文写完整回答，不少于 400 字，分成问题、方法、实验、局限四段。必须使用用户题目里的对象，不要换成另一篇论文的任务。没有实验表的百分点不要编。不要空泛鼓励。",
-    "evaluate": "你是论文评审助手。根据文稿给出 0-100 综合评分、学术规范重合度估计（百分比，仅作表述规范与原创性提示，非查重鉴定）、优点、不足、改进建议、分项评分。用 JSON 输出。",
+    "evaluate": "你是论文评审助手。只输出 JSON，字段必须是 score（0-100 的整数）、overlap（0-100 的整数，只表示表述规范提示，不是查重鉴定）、summary（一段总评）、strengths（字符串数组）、weaknesses（字符串数组）、suggestions（字符串数组）、dimensions（对象，键为分项名，值为分数）。依据文稿里的事实，文稿没有的实验数字不要编。",
     "outline": "你是科研写作规划助手。按用户给出的主题写 5 章大纲和 3 个研究问题。每一章的 points 至少 80 个汉字，写清本章要回答的问题、要放的图表和不能写进本章的内容。题目里没有的任务不要写进方法：作物病害不要写行人跟踪，翻译或摘要任务不要写检测。研究问题写成完整问句。严禁编造论文题名、作者和会议。没有文献列表时，文献区写「待补充检索」。只输出 JSON，字段为 topic、chapters[{title,points}]、questions[{q}]。",
     "coach": "你是论文写作导师。引导题、参考表述和改写都要紧扣学生的题目。参考表述不少于 150 字，包含问题现象、与基线的一处差异、准备用的指标。题目里没有的任务不要写进去。没有实验表就不要写具体百分点。不要打分。",
     "polish": "你是学术中文润色编辑。分析语言、逻辑、学术表达，给 0-10 分，列出亮点、逻辑通顺度、优化方向与改写示例。JSON。",
@@ -146,7 +146,7 @@ SYSTEM_PROMPTS = {
     "reviewer": "你按指定审稿人风格写评审意见、修改建议与返修提问。",
     "retrospect": "你对照多份历史评估/润色记录，总结进步点、遗留问题与后续优化优先级。",
     "pipeline": "你对论文做快速全流程体检。只输出精炼中文报告，总分控制在 600 字内：综合分、3条优点、3条不足、大纲调整要点、润色要点、文献问题、下一步3条。不要长篇展开。",
-    "translate": "你是中英学术翻译。把英文论文段落译为通顺中文。保留 BLEU、GPU、Adam、公式与专有名词原文；禁止中英单词混杂插替。按用户给出的 [1][2]… 编号逐段只输出译文，不要解释。",
+    "translate": "你是中英学术翻译。中文稿译成英文，英文稿译成中文。只输出译文，不要抄原文，不要加[1][2]编号，不要写说明。公式、指标符号和专名保持原样。",
 }
 SYSTEM_PROMPTS.update(EXTRA_PROMPTS)
 
@@ -163,6 +163,44 @@ def _clip(text, n=2200):
     if len(text) <= n:
         return text
     return text[:n] + u"\n…（原文已截断）"
+
+
+def _script_counts(text):
+    raw = text or u""
+    cjk = 0
+    latin = 0
+    for ch in raw:
+        code = ord(ch)
+        if 0x4E00 <= code <= 0x9FFF:
+            cjk += 1
+        elif (65 <= code <= 90) or (97 <= code <= 122):
+            latin += 1
+    return cjk, latin
+
+
+def _translate_excerpt(text):
+    raw = text or u""
+    for mark in (u"摘要", u"Abstract", u"ABSTRACT"):
+        idx = raw.find(mark)
+        if 0 < idx < 8000:
+            raw = raw[idx:]
+            break
+    return _clip(raw, 1200)
+
+
+def _translate_instruction(text):
+    cjk, latin = _script_counts(text)
+    if cjk >= latin:
+        return u"下面是中文。请译成英文。只输出英文译文，不要保留中文句子，不要加[1][2]编号，不要写译者说明。专名、公式和 mAP 等符号保持原样。"
+    return u"下面是英文。请译成中文。只输出中文译文，不要保留英文句子，不要加[1][2]编号，不要写译者说明。专名、公式和 mAP 等符号保持原样。"
+
+
+def _translation_missed(src, out):
+    sc, sl = _script_counts(src)
+    oc, ol = _script_counts(out)
+    if sc >= sl:
+        return ol < 40 or oc >= ol
+    return oc < 20
 
 
 def parse_bytes(filename, data):
@@ -298,7 +336,7 @@ def _ernie_chat(messages):
     return data["result"]
 
 
-def call_llm(model_id, system, user, history=None):
+def call_llm(model_id, system, user, history=None, max_tokens=None):
     messages = [{"role": "system", "content": system}]
     if history:
         for h in history[-8:]:
@@ -319,8 +357,8 @@ def call_llm(model_id, system, user, history=None):
     elif spec["thinking"]:
         extra = {"enable_thinking": False}
     # 短答任务少给 token，减轻尾部拖延；全流程也不要 2k
-    tok = 700
-    if model_id in ("glm-z1-flash", "glm-4.5-flash", "glm-4.7-flash"):
+    tok = max_tokens or 700
+    if max_tokens is None and model_id in ("glm-z1-flash", "glm-4.5-flash", "glm-4.7-flash"):
         tok = 900
     try:
         text = _openai_chat(
@@ -772,6 +810,82 @@ def demo_chat(scene, question, model_id, topic=u"", text=u""):
     }
 
 
+def _as_lines(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        lines = []
+        for item in value:
+            lines.extend(_as_lines(item))
+        return [x for x in lines if x]
+    if isinstance(value, dict):
+        lines = []
+        for key, item in value.items():
+            if isinstance(item, (dict, list)):
+                nested = _as_lines(item)
+                lines.append(u"%s：%s" % (key, u"；".join(nested)) if nested else u"%s" % key)
+            else:
+                text = (u"%s" % item).strip()
+                lines.append(u"%s：%s" % (key, text) if text else u"%s" % key)
+        return lines
+    text = (u"%s" % value).strip()
+    return [text] if text else []
+
+
+def _pick(parsed, names):
+    for name in names:
+        if name in parsed and parsed[name] not in (None, "", [], {}):
+            return parsed[name]
+    return None
+
+
+def _normalize_evaluate(parsed):
+    score = _pick(parsed, ("score", u"综合评分", u"总分", "overall_score"))
+    overlap = _pick(parsed, ("overlap", u"学术规范重合度估计", u"规范重合度", u"重合度"))
+    summary = _pick(parsed, ("summary", u"总结", u"总评", u"概述"))
+    strengths = _as_lines(_pick(parsed, ("strengths", u"优点", u"优势")))
+    weaknesses = _as_lines(_pick(parsed, ("weaknesses", u"不足", u"缺点", u"问题")))
+    suggestions = _as_lines(_pick(parsed, ("suggestions", u"改进建议", u"建议")))
+    dimensions = _as_lines(_pick(parsed, ("dimensions", u"分项评分", "scores", "subscores")))
+    if score is not None:
+        parsed["score"] = score
+    if overlap is not None:
+        parsed["overlap"] = overlap
+    if isinstance(summary, (dict, list)):
+        summary = u"；".join(_as_lines(summary))
+    if summary:
+        parsed["summary"] = summary
+    if strengths:
+        parsed["strengths"] = strengths
+    if weaknesses:
+        parsed["weaknesses"] = weaknesses
+    if suggestions:
+        parsed["suggestions"] = suggestions
+    dim_names = {
+        "originality": u"创新性",
+        "methodology": u"方法",
+        "method": u"方法",
+        "results": u"结果",
+        "result": u"结果",
+        "discuss": u"讨论",
+        "discussion": u"讨论",
+        "conclusion": u"结论",
+        "literature": u"文献",
+        "writing": u"表达",
+        "experiment": u"实验",
+        "experiments": u"实验",
+        "format": u"规范",
+        "norm": u"规范",
+    }
+    if dimensions:
+        named = []
+        for line in dimensions:
+            key, sep, rest = line.partition(u"：")
+            named.append((dim_names.get(key.strip().lower(), key) + sep + rest) if sep else line)
+        parsed["sections"] = list(parsed.get("sections") or []) + [{u"title": u"分项评分", u"items": named}]
+    return parsed
+
+
 def _try_json(text):
     if not text:
         return None
@@ -823,9 +937,8 @@ def run_module(action, payload):
         "pipeline": u"快速全流程短报告。文件：%s\n正文摘录：\n%s" % (filename, _clip(text, 2200)),
         "translate": u"%s\n\n待译段落：\n%s"
         % (
-            extra.get("note")
-            or u"英译中，按 [1][2]… 输出通顺中文，保留公式与专名。",
-            _clip(text, 3500),
+            extra.get("note") or _translate_instruction(text),
+            _translate_excerpt(text),
         ),
         "venue": u"根据这篇论文推荐期刊或会议，说明适合原因和投稿前要补的内容。不要向用户索要正文。\n文件：%s\n论文：\n%s"
         % (filename, _clip(text, 2200)),
@@ -842,7 +955,24 @@ def run_module(action, payload):
             _clip(text),
         )
     )
-    llm_text, demo = call_llm(model_id, sys_p, user, history if action == "chat" else None)
+    llm_text, demo = call_llm(
+        model_id,
+        sys_p,
+        user,
+        history if action == "chat" else None,
+        1600 if action == "translate" else None,
+    )
+    if action == "translate" and llm_text and not demo and _translation_missed(text, llm_text):
+        again, again_demo = call_llm(
+            model_id,
+            sys_p,
+            u"上一次没有翻译，只是复述了原文。%s\n\n待译段落：\n%s"
+            % (_translate_instruction(text), _translate_excerpt(text)),
+            None,
+            1600,
+        )
+        if again and not again_demo:
+            llm_text = again
 
     fallbacks = {
         "chat": lambda: demo_chat(extra.get("scene") or "writing", extra.get("question") or text, model_id, extra.get("topic") or "", text),
@@ -908,6 +1038,8 @@ def run_module(action, payload):
                 info = demo_outline(topic, text, model_id)
                 parsed["sections"] = [{u"title": u"离线推断", u"p": u"上面是模型给出的章名。下面按「%s」把每一章写成可以接着写的段落。" % topic}]
                 parsed["sections"].extend([{u"title": c["title"], u"p": c["points"]} for c in info["chapters"]])
+        if action == "evaluate":
+            _normalize_evaluate(parsed)
         if action == "chat":
             reply = parsed.get("reply") or u""
             if len(reply) < 180:

@@ -39,7 +39,7 @@
     var raw = (src || "").trim();
     if (!raw) {
       return pack([
-        { title: "还没有原文", p: "把要改的段落贴进来。离线改写只删空话，不编实验数字，也不会换成另一篇论文的题目。" }
+        { title: "还没有原文", p: "先上传论文，或把要改的段落贴进来。离线改写只删空话，不编实验数字，也不会换成另一篇论文的题目。" }
       ]);
     }
     var after = raw
@@ -444,11 +444,11 @@
       ]);
     }
     if (action === "translate") {
-      var zh = (src || "").trim() || b.zh;
+      var raw = (src || "").trim();
+      var fromZh = /[\u4e00-\u9fff]/.test(raw) && !/[A-Za-z]{40}/.test(raw);
       return pack([
-        { title: "中文", pre: zh },
-        { title: "英文", pre: /[A-Za-z]{20}/.test(zh) ? zh : b.en },
-        { title: "用词提醒", items: ["数字和指标符号保持原样，不换算、不四舍五入出新值", "少用 novel、significant，除非统计检验写在原文", "this thesis 和 we 全段只用一种", "题目术语与「" + topic + "」一致，不要译成另一个任务"] }
+        { title: fromZh ? "英文译文" : "中文译文", pre: fromZh ? ("【离线推断】原文是中文，应译成英文，不能把原文编号后原样返回。请在连上模型后重新生成。原文开头：\n" + clip(raw, 280)) : (raw || b.zh) },
+        { title: "用词提醒", items: ["中文稿译成英文，英文稿译成中文", "不要加 [1][2] 编号，除非原文自己就有编号", "数字和指标符号保持原样"] }
       ]);
     }
     if (action === "expand") {
@@ -484,6 +484,62 @@
       return pack([
         { title: "周报", pre: "【题目】" + topic + "\n【本周完成】" + (text || "补了一张对照表或一页文献差异。") + "\n【卡住】" + b.questions[0] + "\n【下周】" + b.metric },
         { title: "邮件标题", items: ["【周报】" + topic.slice(0, 18) + " 第N周"] }
+      ]);
+    }
+    if (action === "terms") {
+      return pack([
+        { title: "按「" + topic + "」统一说法", p: "只列这篇文稿里已经出现、或题目必然要用的术语。不要换成另一篇论文的缩写表。" },
+        { title: "建议固定下来的概念", items: [b.method, b.metric, "同一概念全文只用一个名字，缩写在首次出现时写出全称"] },
+        { title: "文稿摘录", pre: clip(text, 360) || "还没有上传文稿。上传后这里按正文里的用词来列。" }
+      ]);
+    }
+    if (action === "formula") {
+      return pack([
+        { title: "符号跟着「" + topic + "」走", p: b.metric },
+        { title: "正文里要定义的量", items: ["主指标在第一次出现时写出全称和计算口径", "阈值、损失和划分方式各给一个符号，并说明取自哪一节", b.fail] },
+        { title: "文稿摘录", pre: clip(text, 360) || "还没有上传文稿。上传后按正文里的指标写符号，不另编一套公式。" }
+      ]);
+    }
+    if (action === "figure") {
+      return pack([
+        { title: "图和表要服务「" + topic + "」", p: b.method },
+        { title: "建议的图题表题", items: ["图1  问题现象：哪一类输入失败", "图2  方法和基线差在哪一处", "表1  数据划分", "表2  主指标与失败子集，单元格没有结果就写待填"] },
+        { title: "图注", p: "图注只写看什么、条件是什么。结论放在正文，并指回图号或表号。" },
+        { title: "文稿摘录", pre: clip(text, 360) || "还没有上传文稿。" }
+      ]);
+    }
+    if (action === "experiment") {
+      return pack([
+        { title: "实验设计", p: b.method },
+        { title: "必须分开报的内容", items: [b.metric, b.fail, "先冻结划分，再比基线，再做只改一处的消融"] },
+        { title: "文稿里已经写到的实验", pre: clip(text, 400) || "还没有上传文稿。上传后按正文里的数据和指标补表，不另编百分点。" }
+      ]);
+    }
+    if (action === "reproduce") {
+      return pack([
+        { title: "复现「" + topic + "」要写清的项", items: ["数据从哪来、怎么划分、随机种子", "基线的官方配置和你改过的那一处", b.metric, "失败子集怎么抽、占测试集多少"] },
+        { title: "文稿摘录", pre: clip(text, 360) || "还没有上传文稿。上传后按正文里的配置列清单，缺的项标成待补，不编命令参数。" }
+      ]);
+    }
+    if (action === "ethics") {
+      return pack([
+        { title: "声明要扣住「" + topic + "」", p: "数据采集、保存范围和展示时去掉了哪些可识别信息，都按这篇文稿里的做法写。文稿没写的授权不要编。" },
+        { title: "建议单列的三件事", items: [b.fail, "数据是否出过这台机器", "展示用的图是否还能认出具体的人、地点或编号"] },
+        { title: "文稿摘录", pre: clip(text, 360) || "还没有上传文稿。" }
+      ]);
+    }
+    if (action === "rebuttal") {
+      return pack([
+        { title: "回复结构", p: "先复述审稿意见，再写已改、部分改或保留的理由，并给出页码。语气只对意见，不对人。" },
+        { title: "这篇文稿可以拿来回应的点", items: [b.method, b.metric, b.fail] },
+        { title: "论文与审稿意见", pre: clip(text, 500) || "请上传论文，并在下面粘贴审稿意见。" }
+      ]);
+    }
+    if (action === "diff") {
+      return pack([
+        { title: "对照「" + topic + "」", p: b.problem },
+        { title: "已提供的稿件", pre: clip(text, 500) || "请上传一稿，并在下面贴上另一稿或修改说明。" },
+        { title: "还要对上的内容", items: [b.metric, b.fail, b.related] }
       ]);
     }
     return pack([

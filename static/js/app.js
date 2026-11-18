@@ -20,8 +20,22 @@
     ov.classList.toggle("show", !!on);
     if ($("overlayText")) $("overlayText").textContent = text || "生成中…";
   }
+  function plain(v) {
+    if (v == null) return "";
+    if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return String(v);
+    if (Object.prototype.toString.call(v) === "[object Array]") {
+      return v.map(plain).filter(Boolean).join("；");
+    }
+    if (typeof v === "object") {
+      return Object.keys(v).map(function (k) {
+        var child = plain(v[k]);
+        return child ? (k + "：" + child) : k;
+      }).join("；");
+    }
+    return String(v);
+  }
   function esc(s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return plain(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
   function modelId() {
     var s = $("modelSelect");
@@ -241,11 +255,41 @@
     var badge = originBadge(d);
     if (d.reply) return badge + "<div class='pre'>" + esc(d.reply) + "</div>";
     var html = "";
-    if (d.score != null) html += "<h3>综合评分 " + esc(d.score) + (d.overlap != null ? " · 规范重合度 " + esc(d.overlap) + "%" : "") + "</h3>";
-    if (d.summary) html += "<p>" + esc(d.summary) + "</p>";
-    if (d.strengths) html += "优点<ul>" + d.strengths.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
-    if (d.weaknesses) html += "不足<ul>" + d.weaknesses.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
-    if (d.suggestions) html += "建议<ul>" + d.suggestions.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
+    function linesOf(v) {
+      if (v == null || v === "") return [];
+      if (Object.prototype.toString.call(v) === "[object Array]") {
+        var out = [];
+        for (var i = 0; i < v.length; i++) out = out.concat(linesOf(v[i]));
+        return out;
+      }
+      if (typeof v === "object") {
+        var keys = Object.keys(v);
+        var rows = [];
+        for (var j = 0; j < keys.length; j++) {
+          var child = linesOf(v[keys[j]]);
+          rows.push(child.length ? (keys[j] + "：" + child.join("；")) : keys[j]);
+        }
+        return rows;
+      }
+      return [String(v)];
+    }
+    function listHtml(title, v) {
+      var rows = linesOf(v);
+      if (!rows.length) return "";
+      return title + "<ul>" + rows.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>";
+    }
+    if (d.score != null && d.score !== "") {
+      var overlap = "";
+      if (d.overlap != null && d.overlap !== "") {
+        var ov = String(d.overlap);
+        overlap = " · 规范重合度 " + esc(ov) + ((/%|％/.test(ov)) ? "" : "%");
+      }
+      html += "<h3>综合评分 " + esc(d.score) + overlap + "</h3>";
+    }
+    if (d.summary) html += "<p>" + esc(typeof d.summary === "string" ? d.summary : linesOf(d.summary).join("；")) + "</p>";
+    html += listHtml("优点", d.strengths);
+    html += listHtml("不足", d.weaknesses);
+    html += listHtml("建议", d.suggestions);
     if (d.chapters) html += "<h4>章节大纲</h4><ul>" + d.chapters.map(function (c) { return "<li><b>" + esc(c.title) + "</b> " + esc(c.points) + "</li>"; }).join("") + "</ul>";
     if (d.papers) html += "<h4>核心文献</h4><ul>" + d.papers.map(function (p) { return "<li>" + esc(p.title) + " · " + esc(p.meta) + "</li>"; }).join("") + "</ul>";
     if (d.questions && d.questions[0] && d.questions[0].q) {
@@ -293,7 +337,7 @@
         }
       });
     }
-    if (d.llm_text && !html) html = "<div class='pre'>" + esc(d.llm_text) + "</div>";
+    if (!html && (d.llm_text || d.raw)) html = "<div class='pre'>" + esc(d.llm_text || d.raw) + "</div>";
     return badge + (html || "<p>已生成。</p>");
   }
 
@@ -317,15 +361,26 @@
     if (key === "reviewer") extra.style = window.LX_STYLE || "gentle";
     return extra;
   }
+  function paperText(key) { return (fileOf(key).text) || ""; }
+  function fieldText(id) {
+    var el = $(id);
+    return el && el.value ? el.value.trim() : "";
+  }
+  function withPaper(paper, label, note) {
+    var body = paper ? paper.slice(0, 8000) : "";
+    if (body && note) return "论文正文：\n" + body + "\n\n" + label + "：\n" + note;
+    return note || body;
+  }
   function textOf(key) {
-    if (key === "refs" && $("refRaw") && $("refRaw").value) return $("refRaw").value;
-    if (key === "rewrite" && $("rewriteSrc") && $("rewriteSrc").value) return $("rewriteSrc").value;
-    if (key === "translate" && $("transSrc") && $("transSrc").value) return $("transSrc").value;
-    if (key === "rebuttal" && $("rebRaw") && $("rebRaw").value) return $("rebRaw").value;
-    if (key === "weekly" && $("weekNote") && $("weekNote").value) return $("weekNote").value;
-    if (key === "diff" && $("diffNote") && $("diffNote").value) return $("diffNote").value;
-    if (key === "coach" && $("coachAns") && $("coachAns").value) return $("coachAns").value;
-    return (fileOf(key).text) || "";
+    var paper = paperText(key);
+    if (key === "refs") return fieldText("refRaw") || paper;
+    if (key === "rewrite") return withPaper(paper, "优先改写这一段", fieldText("rewriteSrc"));
+    if (key === "translate") return withPaper(paper, "优先翻译这一段", fieldText("transSrc"));
+    if (key === "rebuttal") return withPaper(paper, "审稿意见", fieldText("rebRaw"));
+    if (key === "weekly") return withPaper(paper, "本周进展", fieldText("weekNote"));
+    if (key === "diff") return withPaper(paper, "另一稿或修改说明", fieldText("diffNote"));
+    if (key === "coach" && fieldText("coachAns")) return fieldText("coachAns");
+    return paper;
   }
 
   window.api = api;
@@ -417,6 +472,12 @@
             files[key] = { name: name, text: text };
             var lab = $(key + "FileLabel") || zone.parentNode.querySelector(".filelab");
             if (lab) lab.textContent = "来源文件：" + name;
+            var fill = {
+              framework: "fwIdea",
+              diagram: "diagIdea"
+            };
+            var box = fill[key] && $(fill[key]);
+            if (box && !box.value.trim()) box.value = String(text || "").replace(/\s+/g, " ").trim().slice(0, 800);
             toast("已解析：" + name);
           };
           if (isStaticHost() || !file.name) {
@@ -443,7 +504,7 @@
           });
         }
         zone.addEventListener("click", function (e) {
-          if (e.target.tagName === "BUTTON") return;
+          if (e.target === input || e.target.tagName === "BUTTON") return;
           input.click();
         });
         input.addEventListener("change", function () { handle(input.files[0]); });

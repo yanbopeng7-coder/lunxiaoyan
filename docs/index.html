@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>论小研 · AI 科研论文辅助平台</title>
-  <link rel="stylesheet" href="static/css/style.css?v=49" />
+  <link rel="stylesheet" href="static/css/style.css?v=55" />
   <script>
     function go(id) {
       var pages = document.querySelectorAll(".page");
@@ -378,6 +378,8 @@
       <section class="page" id="page-topic">
         <div class="hero"><h1>选题可行性评估</h1><p>空白、风险、工作量与题目改写</p></div>
         <div class="card">
+          <div class="drop" data-key="topic">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="topicFileLabel">尚未选择文件</p>
           <input type="text" id="topicName" placeholder="拟题 / 方向，例如校园行人检测" />
           <button class="btn" type="button" onclick="runTool('topic')">评估选题</button>
           <div class="report" id="topicOut"></div>
@@ -386,6 +388,8 @@
       <section class="page" id="page-proposal">
         <div class="hero"><h1>开题报告生成</h1><p>依据、内容、方案、12 周进度</p></div>
         <div class="card">
+          <div class="drop" data-key="proposal">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="proposalFileLabel">尚未选择文件</p>
           <input type="text" id="propTopic" placeholder="研究主题" />
           <button class="btn ghost" type="button" onclick="loadDemo('proposal')">使用演示用例</button>
           <button class="btn" type="button" onclick="runTool('proposal')">生成开题报告</button>
@@ -395,7 +399,8 @@
       <section class="page" id="page-litreview">
         <div class="hero"><h1>文献综述撰写</h1><p>按技术线，不要编年体</p></div>
         <div class="card">
-          <div class="drop" data-key="litreview">可上传已有综述草稿<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <div class="drop" data-key="litreview">拖拽 / 点击上传论文或综述草稿 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="litreviewFileLabel">尚未选择文件</p>
           <button class="btn ghost" type="button" onclick="loadDemo('litreview')">使用演示用例</button>
           <button class="btn" type="button" onclick="runTool('litreview')">生成综述结构</button>
           <div class="report" id="litreviewOut"></div>
@@ -403,7 +408,12 @@
       </section>
       <section class="page" id="page-schedule">
         <div class="hero"><h1>进度与任务书</h1><p>里程碑与每周交付物</p></div>
-        <div class="card"><button class="btn" type="button" onclick="runTool('schedule')">生成任务书</button><div class="report" id="scheduleOut"></div></div>
+        <div class="card">
+          <div class="drop" data-key="schedule">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="scheduleFileLabel">尚未选择文件</p>
+          <button class="btn" type="button" onclick="runTool('schedule')">生成任务书</button>
+          <div class="report" id="scheduleOut"></div>
+        </div>
       </section>
       <section class="page" id="page-path">
         <div class="hero"><h1>科研路径规划</h1><p>短期提升与中长期方向</p></div>
@@ -411,7 +421,8 @@
           <input type="text" id="pathMajor" placeholder="专业，如计算机科学与技术" />
           <input type="text" id="pathSkills" placeholder="已掌握技能" style="margin-top:8px" />
           <input type="text" id="pathInterest" placeholder="研究兴趣" style="margin-top:8px" />
-          <div class="drop" data-key="path">上传课程作业 / 课程论文<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <div class="drop" data-key="path">拖拽 / 点击上传课程作业或论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="pathFileLabel">尚未选择文件</p>
           <button class="btn" type="button" onclick="runTool('path')">生成规划路线</button>
           <div class="report" id="pathOut"></div>
         </div>
@@ -419,7 +430,9 @@
       <section class="page" id="page-rewrite">
         <div class="hero"><h1>学术降重改写</h1><p>按场景和数据改写，禁止无意义同义替换</p></div>
         <div class="card">
-          <textarea id="rewriteSrc" placeholder="粘贴待改写段落"></textarea>
+          <div class="drop" data-key="rewrite">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="rewriteFileLabel">尚未选择文件</p>
+          <textarea id="rewriteSrc" placeholder="也可只粘贴要改的段落；上传全文后这里留空，就按全文改"></textarea>
           <button class="btn" type="button" onclick="runTool('rewrite')">开始降重改写</button>
           <div class="report" id="rewriteOut"></div>
         </div>
@@ -427,6 +440,8 @@
       <section class="page" id="page-expand">
         <div class="hero"><h1>章节扩写</h1><p>提纲扩成可粘贴学术段落</p></div>
         <div class="card">
+          <div class="drop" data-key="expand">拖拽 / 点击上传论文，按所选章节扩写<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="expandFileLabel">尚未选择文件</p>
           <select id="expandChap"><option>绪论 / 创新点</option><option>相关工作</option><option>方法设计</option><option>实验验证</option><option>总结展望</option></select>
           <button class="btn ghost" type="button" onclick="loadDemo('expand')">使用演示用例</button>
           <button class="btn" type="button" onclick="runTool('expand')">扩写本章</button>
@@ -436,7 +451,9 @@
       <section class="page" id="page-translate">
         <div class="hero"><h1>中英学术翻译</h1><p>保留 mAP 等指标符号</p></div>
         <div class="card">
-          <textarea id="transSrc" placeholder="中文或英文段落"></textarea>
+          <div class="drop" data-key="translate">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="translateFileLabel">尚未选择文件</p>
+          <textarea id="transSrc" placeholder="也可只粘贴要翻译的段落；上传全文后这里留空，就按全文译"></textarea>
           <button class="btn" type="button" onclick="runTool('translate')">生成译文</button>
           <div class="report" id="translateOut"></div>
         </div>
@@ -444,6 +461,8 @@
       <section class="page" id="page-framework">
         <div class="hero"><h1>无幻觉论文框架</h1><p>Abstract / Introduction / Related Work；参考文献只使用你粘贴的条目，绝不编造</p></div>
         <div class="card">
+          <div class="drop" data-key="framework">拖拽 / 点击上传论文，用来填写研究 idea<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="frameworkFileLabel">尚未选择文件</p>
           <label>研究 idea</label>
           <textarea id="fwIdea" placeholder="例如：校园监控中的小目标行人检测与遮挡跟踪"></textarea>
           <label style="margin-top:10px;display:block">真实文献条目（每行一条，可含作者/年份/题名）</label>
@@ -458,6 +477,8 @@
       <section class="page" id="page-diagram">
         <div class="hero"><h1>架构拓扑图</h1><p>根据 idea 生成系统架构，并导出 Mermaid / DOT / TikZ / Matplotlib</p></div>
         <div class="card">
+          <div class="drop" data-key="diagram">拖拽 / 点击上传论文，用来提取方法流程<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="diagramFileLabel">尚未选择文件</p>
           <textarea id="diagIdea" placeholder="描述方法流程，例如：YOLOv8 检测 → ByteTrack 跟踪 → 轨迹热力与越界分析"></textarea>
           <button class="btn" type="button" onclick="runDiagram()">生成架构图与脚本</button>
           <div class="report" id="diagOut"></div>
@@ -485,7 +506,9 @@
       <section class="page" id="page-diff">
         <div class="hero"><h1>两稿对照</h1><p>进步点与未改的高优先级项</p></div>
         <div class="card">
-          <textarea id="diffNote" placeholder="修改说明或第二版摘录"></textarea>
+          <div class="drop" data-key="diff">拖拽 / 点击上传其中一稿 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="diffFileLabel">尚未选择文件</p>
+          <textarea id="diffNote" placeholder="另一稿的修改说明，或第二版摘录"></textarea>
           <button class="btn ghost" type="button" onclick="loadDemo('diff')">使用演示用例</button>
           <button class="btn" type="button" onclick="runTool('diff')">生成对照</button>
           <div class="report" id="diffOut"></div>
@@ -494,43 +517,72 @@
       <section class="page" id="page-retrospect">
         <div class="hero"><h1>论文写作复盘</h1><p>对照多次评估 / 润色记录</p></div>
         <div class="card">
+          <div class="drop" data-key="retrospect">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="retrospectFileLabel">尚未选择文件</p>
           <button class="btn" type="button" onclick="runTool('retrospect')">生成结构化复盘</button>
           <div class="report" id="retrospectOut"></div>
         </div>
       </section>
       <section class="page" id="page-terms">
         <div class="hero"><h1>术语与缩写表</h1><p></p></div>
-        <div class="card"><button class="btn" type="button" onclick="runTool('terms')">生成术语表</button><div class="report" id="termsOut"></div></div>
+        <div class="card">
+          <div class="drop" data-key="terms">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="termsFileLabel">尚未选择文件</p>
+          <button class="btn" type="button" onclick="runTool('terms')">生成术语表</button>
+          <div class="report" id="termsOut"></div>
+        </div>
       </section>
       <section class="page" id="page-formula">
         <div class="hero"><h1>公式与符号规范</h1><p></p></div>
-        <div class="card"><button class="btn" type="button" onclick="runTool('formula')">生成符号表</button><div class="report" id="formulaOut"></div></div>
+        <div class="card">
+          <div class="drop" data-key="formula">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="formulaFileLabel">尚未选择文件</p>
+          <button class="btn" type="button" onclick="runTool('formula')">生成符号表</button>
+          <div class="report" id="formulaOut"></div>
+        </div>
       </section>
       <section class="page" id="page-figure">
         <div class="hero"><h1>图表与表题</h1><p></p></div>
         <div class="card">
-          <div class="drop" data-key="figure">可上传论文<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <div class="drop" data-key="figure">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="figureFileLabel">尚未选择文件</p>
           <button class="btn" type="button" onclick="runTool('figure')">生成图表题</button>
           <div class="report" id="figureOut"></div>
         </div>
       </section>
       <section class="page" id="page-experiment">
         <div class="hero"><h1>实验设计助手</h1><p></p></div>
-        <div class="card"><button class="btn" type="button" onclick="runTool('experiment')">生成实验方案</button><div class="report" id="experimentOut"></div></div>
+        <div class="card">
+          <div class="drop" data-key="experiment">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="experimentFileLabel">尚未选择文件</p>
+          <button class="btn" type="button" onclick="runTool('experiment')">生成实验方案</button>
+          <div class="report" id="experimentOut"></div>
+        </div>
       </section>
       <section class="page" id="page-reproduce">
         <div class="hero"><h1>复现实验清单</h1><p></p></div>
-        <div class="card"><button class="btn" type="button" onclick="runTool('reproduce')">生成复现清单</button><div class="report" id="reproduceOut"></div></div>
+        <div class="card">
+          <div class="drop" data-key="reproduce">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="reproduceFileLabel">尚未选择文件</p>
+          <button class="btn" type="button" onclick="runTool('reproduce')">生成复现清单</button>
+          <div class="report" id="reproduceOut"></div>
+        </div>
       </section>
       <section class="page" id="page-ethics">
         <div class="hero"><h1>伦理、致谢与原创声明</h1><p></p></div>
-        <div class="card"><button class="btn" type="button" onclick="runTool('ethics')">生成声明草稿</button><div class="report" id="ethicsOut"></div></div>
+        <div class="card">
+          <div class="drop" data-key="ethics">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="ethicsFileLabel">尚未选择文件</p>
+          <button class="btn" type="button" onclick="runTool('ethics')">生成声明草稿</button>
+          <div class="report" id="ethicsOut"></div>
+        </div>
       </section>
       <section class="page" id="page-submit">
         <div class="hero"><h1>投稿适配智能优化</h1><p>对照期刊指南 / 学校规范</p></div>
         <div class="card">
           <textarea id="subGuide" placeholder="粘贴投稿指南或学校论文规范"></textarea>
-          <div class="drop" data-key="submit">上传论文初稿<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <div class="drop" data-key="submit">拖拽 / 点击上传论文初稿 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="submitFileLabel">尚未选择文件</p>
           <button class="btn ghost" type="button" onclick="loadDemo('submit')">使用演示用例</button>
           <button class="btn" type="button" onclick="runTool('submit')">对照优化</button>
           <div class="report" id="submitOut"></div>
@@ -544,7 +596,8 @@
             <button class="qbtn" type="button" onclick="window.LX_STYLE='strict'">严格学术型</button>
             <button class="qbtn" type="button" onclick="window.LX_STYLE='cross'">交叉学科评审</button>
           </div>
-          <div class="drop" data-key="reviewer">上传论文<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <div class="drop" data-key="reviewer">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="reviewerFileLabel">尚未选择文件</p>
           <button class="btn ghost" type="button" onclick="loadDemo('reviewer')">使用演示用例</button>
           <button class="btn" type="button" onclick="runTool('reviewer')">生成评审意见</button>
           <div class="report" id="reviewerOut"></div>
@@ -553,7 +606,9 @@
       <section class="page" id="page-rebuttal">
         <div class="hero"><h1>审稿意见回复</h1><p></p></div>
         <div class="card">
-          <textarea id="rebRaw" placeholder="粘贴审稿人意见"></textarea>
+          <div class="drop" data-key="rebuttal">拖拽 / 点击上传被审的论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="rebuttalFileLabel">尚未选择文件</p>
+          <textarea id="rebRaw" placeholder="再粘贴审稿人意见"></textarea>
           <button class="btn" type="button" onclick="runTool('rebuttal')">生成回复草稿</button>
           <div class="report" id="rebuttalOut"></div>
         </div>
@@ -571,7 +626,8 @@
       <section class="page" id="page-defense">
         <div class="hero"><h1>答辩提问模拟</h1><p></p></div>
         <div class="card">
-          <div class="drop" data-key="defense">可上传论文<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <div class="drop" data-key="defense">拖拽 / 点击上传论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="defenseFileLabel">尚未选择文件</p>
           <button class="btn ghost" type="button" onclick="loadDemo('defense')">使用演示用例</button>
           <button class="btn" type="button" onclick="runTool('defense')">生成答辩题</button>
           <div class="report" id="defenseOut"></div>
@@ -590,7 +646,9 @@
       <section class="page" id="page-weekly">
         <div class="hero"><h1>导师周报与邮件</h1><p></p></div>
         <div class="card">
-          <textarea id="weekNote" placeholder="本周实际进展（可空）"></textarea>
+          <div class="drop" data-key="weekly">拖拽 / 点击上传正在写的论文 docx、pdf、txt<input type="file" accept=".docx,.pdf,.txt,.md" /></div>
+          <p class="filelab" id="weeklyFileLabel">尚未选择文件</p>
+          <textarea id="weekNote" placeholder="本周实际进展（可空，上传论文后会一起写进周报）"></textarea>
           <button class="btn" type="button" onclick="runTool('weekly')">生成周报</button>
           <div class="report" id="weeklyOut"></div>
         </div>
@@ -602,8 +660,8 @@
   <script src="static/vendor/fflate.min.js?v=23"></script>
   <script src="static/vendor/pdf.min.js?v=23"></script>
   <script src="static/js/readfile.js?v=23"></script>
-  <script src="static/js/pages-demo.js?v=52"></script>
-  <script src="static/js/app.js?v=50"></script>
+  <script src="static/js/pages-demo.js?v=54"></script>
+  <script src="static/js/app.js?v=55"></script>
   <script type="module" src="static/js/copilot-ui.js?v=49"></script>
   <script type="module" src="static/js/agent-ui.js?v=49"></script>
 </body>

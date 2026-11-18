@@ -116,11 +116,15 @@ select, input[type="text"], input[type="password"], textarea, .field {
 .btn.ghost { background: #fff; color: var(--text); border: 1px solid var(--line); }
 .btn.gold { background: #f59e0b; color: #111; }
 .drop {
+  position: relative;
   border: 1.5px dashed #93c5fd; background: #f8fbff; border-radius: 14px;
   padding: 18px; text-align: center; color: var(--muted); cursor: pointer; margin: 8px 0;
 }
 [data-theme="dark"] .drop { background: #0f172a; border-color: #334155; }
-.drop input { display: none; }
+.drop input {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; cursor: pointer; font-size: 0;
+}
 .page { display: none; }
 .page.show { display: block; }
 .card {

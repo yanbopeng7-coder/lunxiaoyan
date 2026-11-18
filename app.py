@@ -95,7 +95,17 @@ def _json(data, code=200):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    resp = Response(render_template("index.html"), mimetype="text/html; charset=utf-8")
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+@app.after_request
+def _fresh_assets(resp):
+    path = request.path or ""
+    if path == "/" or path.startswith("/static/"):
+        resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 
 @app.route("/api/health")
